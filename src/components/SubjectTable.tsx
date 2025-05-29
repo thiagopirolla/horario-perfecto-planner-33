@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Plus, Save, Trash2, TableIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Subject } from '@/types/schedule';
+import TimeSlotSelector from './TimeSlotSelector';
 
 interface SubjectTableProps {
   subjects: Subject[];
@@ -212,12 +213,13 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
-                      value={row.schedule}
-                      onChange={(e) => updateRow(row.id, 'schedule', e.target.value)}
-                      placeholder="Seg.08-10"
-                      className="w-24"
-                    />
+                    <div className="w-32">
+                      <TimeSlotSelector
+                        value={row.schedule}
+                        onChange={(schedule) => updateRow(row.id, 'schedule', schedule)}
+                        placeholder="Horário"
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Input

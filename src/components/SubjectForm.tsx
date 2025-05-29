@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, FormInput, TableIcon } from 'lucide-react';
 import { Subject } from '@/types/schedule';
 import SubjectTable from './SubjectTable';
+import TimeSlotSelector from './TimeSlotSelector';
 
 interface SubjectFormProps {
   subjects: Subject[];
@@ -123,11 +125,10 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
               </div>
 
               <div>
-                <Label htmlFor="schedule">Horário (formato: Dia.HH-HH)</Label>
-                <Input
-                  id="schedule"
+                <Label htmlFor="schedule">Horário</Label>
+                <TimeSlotSelector
                   value={newSubject.schedule}
-                  onChange={(e) => setNewSubject({...newSubject, schedule: e.target.value})}
+                  onChange={(schedule) => setNewSubject({...newSubject, schedule})}
                   placeholder="Ex: Seg.08-10, Qua.14-16"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
