@@ -112,13 +112,13 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <Label>Peso das Vagas Disponíveis: {configuration.weightVacancies.toFixed(3)}</Label>
+            <Label>Peso das Vagas Disponíveis: {configuration.weightVacancies.toFixed(1)}</Label>
             <Slider
               value={[configuration.weightVacancies]}
               onValueChange={(value) => updateConfig({ weightVacancies: value[0] })}
-              min={-1}
-              max={0.1}
-              step={0.001}
+              min={0}
+              max={10}
+              step={0.1}
               className="mt-2"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -132,7 +132,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               value={[configuration.weightFriend]}
               onValueChange={(value) => updateConfig({ weightFriend: value[0] })}
               min={0}
-              max={1}
+              max={10}
               step={0.1}
               className="mt-2"
             />
@@ -142,13 +142,13 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
           </div>
 
           <div>
-            <Label>Peso da Dificuldade: {configuration.weightDifficulty.toFixed(3)}</Label>
+            <Label>Peso da Dificuldade: {configuration.weightDifficulty.toFixed(1)}</Label>
             <Slider
               value={[configuration.weightDifficulty]}
               onValueChange={(value) => updateConfig({ weightDifficulty: value[0] })}
               min={0}
-              max={0.1}
-              step={0.001}
+              max={10}
+              step={0.1}
               className="mt-2"
             />
             <p className="text-xs text-muted-foreground mt-1">

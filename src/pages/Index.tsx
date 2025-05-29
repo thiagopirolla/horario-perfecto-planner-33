@@ -14,9 +14,9 @@ import { ScheduleOptimizer } from '@/utils/scheduleOptimizer';
 const Index = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [configuration, setConfiguration] = useState<ScheduleConfiguration>({
-    weightVacancies: 0.001,
-    weightFriend: 1,
-    weightDifficulty: 0.001,
+    weightVacancies: 1.0,
+    weightFriend: 5.0,
+    weightDifficulty: 3.0,
     strategy: 'maximize',
     freeDays: ['Segunda', 'Sexta']
   });

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -196,7 +195,10 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule }) => {
                             <div className="space-y-1">
                               <div className="font-medium text-sm">{subject.name}</div>
                               <div className="text-xs text-muted-foreground">
-                                Turma {subject.class}
+                                Turma {subject.class} • Prof. {subject.professor}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Dificuldade: {subject.difficulty}/5
                               </div>
                               <div className="flex gap-1 flex-wrap">
                                 {subject.required && (
