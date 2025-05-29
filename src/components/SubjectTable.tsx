@@ -1,0 +1,299 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { Plus, Save, Trash2, TableIcon } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Subject } from '@/types/schedule';
+
+interface SubjectTableProps {
+  subjects: Subject[];
+  onSubjectsChange: (subjects: Subject[]) => void;
+}
+
+interface TableRow {
+  id: string;
+  code: string;
+  name: string;
+  required: boolean;
+  class: string;
+  capacity: number;
+  filledSpots: number;
+  professor: string;
+  difficulty: number;
+  hasFriend: boolean;
+  schedule: string;
+  hours: number;
+}
+
+const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange }) => {
+  const [tableRows, setTableRows] = useState<TableRow[]>([
+    {
+      id: '1',
+      code: '',
+      name: '',
+      required: false,
+      class: '',
+      capacity: 40,
+      filledSpots: 0,
+      professor: '',
+      difficulty: 3,
+      hasFriend: false,
+      schedule: '',
+      hours: 2
+    },
+    {
+      id: '2',
+      code: '',
+      name: '',
+      required: false,
+      class: '',
+      capacity: 40,
+      filledSpots: 0,
+      professor: '',
+      difficulty: 3,
+      hasFriend: false,
+      schedule: '',
+      hours: 2
+    },
+    {
+      id: '3',
+      code: '',
+      name: '',
+      required: false,
+      class: '',
+      capacity: 40,
+      filledSpots: 0,
+      professor: '',
+      difficulty: 3,
+      hasFriend: false,
+      schedule: '',
+      hours: 2
+    }
+  ]);
+
+  const addRow = () => {
+    const newRow: TableRow = {
+      id: Date.now().toString(),
+      code: '',
+      name: '',
+      required: false,
+      class: '',
+      capacity: 40,
+      filledSpots: 0,
+      professor: '',
+      difficulty: 3,
+      hasFriend: false,
+      schedule: '',
+      hours: 2
+    };
+    setTableRows([...tableRows, newRow]);
+  };
+
+  const removeRow = (id: string) => {
+    if (tableRows.length > 1) {
+      setTableRows(tableRows.filter(row => row.id !== id));
+    }
+  };
+
+  const updateRow = (id: string, field: keyof TableRow, value: any) => {
+    setTableRows(tableRows.map(row => 
+      row.id === id ? { ...row, [field]: value } : row
+    ));
+  };
+
+  const saveAllSubjects = () => {
+    const validRows = tableRows.filter(row => 
+      row.code.trim() && row.name.trim() && row.schedule.trim()
+    );
+
+    if (validRows.length === 0) {
+      return;
+    }
+
+    const newSubjects: Subject[] = validRows.map(row => ({
+      id: Date.now().toString() + Math.random().toString(),
+      code: row.code,
+      name: row.name,
+      required: row.required,
+      class: row.class,
+      capacity: row.capacity,
+      filledSpots: row.filledSpots,
+      professor: row.professor,
+      difficulty: row.difficulty,
+      hasFriend: row.hasFriend,
+      schedule: row.schedule,
+      hours: row.hours
+    }));
+
+    onSubjectsChange([...subjects, ...newSubjects]);
+
+    // Limpar a tabela após salvar
+    setTableRows([
+      {
+        id: Date.now().toString(),
+        code: '',
+        name: '',
+        required: false,
+        class: '',
+        capacity: 40,
+        filledSpots: 0,
+        professor: '',
+        difficulty: 3,
+        hasFriend: false,
+        schedule: '',
+        hours: 2
+      }
+    ]);
+  };
+
+  return (
+    <Card className="animate-fade-in">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TableIcon className="w-5 h-5" />
+          Adicionar Matérias em Tabela
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Turma</TableHead>
+                <TableHead>Professor</TableHead>
+                <TableHead>Horário</TableHead>
+                <TableHead>Cap.</TableHead>
+                <TableHead>Preench.</TableHead>
+                <TableHead>Dificuldade</TableHead>
+                <TableHead>Obrigatória</TableHead>
+                <TableHead>Tem Amigo</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tableRows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>
+                    <Input
+                      value={row.code}
+                      onChange={(e) => updateRow(row.id, 'code', e.target.value)}
+                      placeholder="MAT001"
+                      className="w-20"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={row.name}
+                      onChange={(e) => updateRow(row.id, 'name', e.target.value)}
+                      placeholder="Nome da matéria"
+                      className="w-32"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={row.class}
+                      onChange={(e) => updateRow(row.id, 'class', e.target.value)}
+                      placeholder="A"
+                      className="w-12"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={row.professor}
+                      onChange={(e) => updateRow(row.id, 'professor', e.target.value)}
+                      placeholder="Professor"
+                      className="w-24"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      value={row.schedule}
+                      onChange={(e) => updateRow(row.id, 'schedule', e.target.value)}
+                      placeholder="Seg.08-10"
+                      className="w-24"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={row.capacity}
+                      onChange={(e) => updateRow(row.id, 'capacity', parseInt(e.target.value) || 0)}
+                      className="w-16"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      value={row.filledSpots}
+                      onChange={(e) => updateRow(row.id, 'filledSpots', parseInt(e.target.value) || 0)}
+                      className="w-16"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-20">
+                      <Slider
+                        value={[row.difficulty]}
+                        onValueChange={(value) => updateRow(row.id, 'difficulty', value[0])}
+                        min={1}
+                        max={5}
+                        step={1}
+                        className="mt-2"
+                      />
+                      <div className="text-xs text-center mt-1">{row.difficulty}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={row.required}
+                      onCheckedChange={(checked) => updateRow(row.id, 'required', checked)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Switch
+                      checked={row.hasFriend}
+                      onCheckedChange={(checked) => updateRow(row.id, 'hasFriend', checked)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeRow(row.id)}
+                      disabled={tableRows.length === 1}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <Button onClick={addRow} variant="outline">
+            <Plus className="w-4 h-4 mr-2" />
+            Adicionar Linha
+          </Button>
+          <Button onClick={saveAllSubjects}>
+            <Save className="w-4 h-4 mr-2" />
+            Salvar Todas as Matérias
+          </Button>
+        </div>
+
+        <div className="text-sm text-muted-foreground mt-2">
+          <p>Formato do horário: Seg.08-10, Qua.14-16</p>
+          <p>Use: Seg, Ter, Qua, Qui, Sex para os dias da semana</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default SubjectTable;
