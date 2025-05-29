@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Plus, X } from 'lucide-react';
+import { Clock, X } from 'lucide-react';
 
 interface TimeSlot {
   day: string;
@@ -43,10 +43,6 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({ value, onChange, pl
     { short: 'Sex', full: 'Sexta' }
   ];
 
-  const timeSlots = [
-    '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'
-  ];
-
   const addTimeSlot = (day: string, startTime: string, endTime: string) => {
     const newSlot = { day, startTime, endTime };
     const updatedSlots = [...selectedSlots, newSlot];
@@ -65,16 +61,37 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({ value, onChange, pl
     onChange(formatted);
   };
 
-  const QuickSlotButton = ({ day, start, end, label }: { day: string; start: string; end: string; label: string }) => (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => addTimeSlot(day, start, end)}
-      className="text-xs"
-    >
-      {label}
-    </Button>
-  );
+  const isSlotSelected = (day: string, start: string, end: string) => {
+    return selectedSlots.some(slot => 
+      slot.day === day && slot.startTime === start && slot.endTime === end
+    );
+  };
+
+  const QuickSlotButton = ({ day, start, end, label }: { day: string; start: string; end: string; label: string }) => {
+    const selected = isSlotSelected(day, start, end);
+    
+    return (
+      <Button
+        variant={selected ? "default" : "outline"}
+        size="sm"
+        onClick={() => {
+          if (selected) {
+            const index = selectedSlots.findIndex(slot => 
+              slot.day === day && slot.startTime === start && slot.endTime === end
+            );
+            if (index !== -1) {
+              removeTimeSlot(index);
+            }
+          } else {
+            addTimeSlot(day, start, end);
+          }
+        }}
+        className={`text-xs ${selected ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
+      >
+        {label}
+      </Button>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -128,7 +145,7 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({ value, onChange, pl
 
           {/* Atalhos Rápidos */}
           <div>
-            <h3 className="text-sm font-medium mb-3">Atalhos Rápidos:</h3>
+            <h3 className="text-sm font-medium mb-3">Selecione os Horários:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {days.map(day => (
                 <div key={day.short} className="space-y-2">
@@ -143,73 +160,6 @@ const TimeSlotSelector: React.FC<TimeSlotSelectorProps> = ({ value, onChange, pl
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Seletor Manual */}
-          <div>
-            <h3 className="text-sm font-medium mb-3">Seleção Manual:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg">
-              <div>
-                <label className="text-xs font-medium">Dia:</label>
-                <select 
-                  id="manual-day" 
-                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  defaultValue=""
-                >
-                  <option value="">Selecione o dia</option>
-                  {days.map(day => (
-                    <option key={day.short} value={day.short}>{day.full}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-medium">Início:</label>
-                <select 
-                  id="manual-start" 
-                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  defaultValue=""
-                >
-                  <option value="">Hora início</option>
-                  {timeSlots.map(time => (
-                    <option key={time} value={time}>{time}:00</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-medium">Fim:</label>
-                <select 
-                  id="manual-end" 
-                  className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  defaultValue=""
-                >
-                  <option value="">Hora fim</option>
-                  {timeSlots.map(time => (
-                    <option key={time} value={time}>{time}:00</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-3">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    const daySelect = document.getElementById('manual-day') as HTMLSelectElement;
-                    const startSelect = document.getElementById('manual-start') as HTMLSelectElement;
-                    const endSelect = document.getElementById('manual-end') as HTMLSelectElement;
-                    
-                    if (daySelect.value && startSelect.value && endSelect.value) {
-                      addTimeSlot(daySelect.value, startSelect.value, endSelect.value);
-                      daySelect.value = '';
-                      startSelect.value = '';
-                      endSelect.value = '';
-                    }
-                  }}
-                  className="w-full"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Horário
-                </Button>
-              </div>
             </div>
           </div>
 

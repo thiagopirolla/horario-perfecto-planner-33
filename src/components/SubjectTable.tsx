@@ -21,8 +21,8 @@ interface TableRow {
   name: string;
   required: boolean;
   class: string;
-  capacity: number;
-  filledSpots: number;
+  capacity: string;
+  filledSpots: string;
   professor: string;
   difficulty: number;
   hasFriend: boolean;
@@ -38,8 +38,8 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
       name: '',
       required: false,
       class: '',
-      capacity: 40,
-      filledSpots: 0,
+      capacity: '',
+      filledSpots: '',
       professor: '',
       difficulty: 3,
       hasFriend: false,
@@ -52,8 +52,8 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
       name: '',
       required: false,
       class: '',
-      capacity: 40,
-      filledSpots: 0,
+      capacity: '',
+      filledSpots: '',
       professor: '',
       difficulty: 3,
       hasFriend: false,
@@ -66,8 +66,8 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
       name: '',
       required: false,
       class: '',
-      capacity: 40,
-      filledSpots: 0,
+      capacity: '',
+      filledSpots: '',
       professor: '',
       difficulty: 3,
       hasFriend: false,
@@ -83,8 +83,8 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
       name: '',
       required: false,
       class: '',
-      capacity: 40,
-      filledSpots: 0,
+      capacity: '',
+      filledSpots: '',
       professor: '',
       difficulty: 3,
       hasFriend: false,
@@ -121,8 +121,8 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
       name: row.name,
       required: row.required,
       class: row.class,
-      capacity: row.capacity,
-      filledSpots: row.filledSpots,
+      capacity: parseInt(row.capacity) || 40,
+      filledSpots: parseInt(row.filledSpots) || 0,
       professor: row.professor,
       difficulty: row.difficulty,
       hasFriend: row.hasFriend,
@@ -140,8 +140,8 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
         name: '',
         required: false,
         class: '',
-        capacity: 40,
-        filledSpots: 0,
+        capacity: '',
+        filledSpots: '',
         professor: '',
         difficulty: 3,
         hasFriend: false,
@@ -225,7 +225,8 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
                     <Input
                       type="number"
                       value={row.capacity}
-                      onChange={(e) => updateRow(row.id, 'capacity', parseInt(e.target.value) || 0)}
+                      onChange={(e) => updateRow(row.id, 'capacity', e.target.value)}
+                      placeholder="40"
                       className="w-16"
                     />
                   </TableCell>
@@ -233,7 +234,8 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
                     <Input
                       type="number"
                       value={row.filledSpots}
-                      onChange={(e) => updateRow(row.id, 'filledSpots', parseInt(e.target.value) || 0)}
+                      onChange={(e) => updateRow(row.id, 'filledSpots', e.target.value)}
+                      placeholder="0"
                       className="w-16"
                     />
                   </TableCell>
