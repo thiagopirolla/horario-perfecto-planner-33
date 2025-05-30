@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -6,22 +5,21 @@ import { Slider } from '@/components/ui/slider';
 import { Settings, XCircle } from 'lucide-react';
 import { ScheduleConfiguration } from '@/types/schedule';
 import TimeSlotSelector from './TimeSlotSelector';
-
 interface ConfigurationPanelProps {
   configuration: ScheduleConfiguration;
   onConfigurationChange: (config: ScheduleConfiguration) => void;
 }
-
 const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   configuration,
   onConfigurationChange
 }) => {
   const updateConfig = (updates: Partial<ScheduleConfiguration>) => {
-    onConfigurationChange({ ...configuration, ...updates });
+    onConfigurationChange({
+      ...configuration,
+      ...updates
+    });
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card className="animate-fade-in">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -38,14 +36,12 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 O sistema irá otimizar sua grade respeitando essas restrições e maximizando 
                 o número de matérias possíveis.
               </p>
-              <TimeSlotSelector
-                value={configuration.unavailableSlots?.join(', ') || ''}
-                onChange={(value) => {
-                  const slots = value ? value.split(', ').filter(slot => slot.trim() !== '') : [];
-                  updateConfig({ unavailableSlots: slots });
-                }}
-                placeholder="Clique nos horários que você NÃO pode ter aula"
-              />
+              <TimeSlotSelector value={configuration.unavailableSlots?.join(', ') || ''} onChange={value => {
+              const slots = value ? value.split(', ').filter(slot => slot.trim() !== '') : [];
+              updateConfig({
+                unavailableSlots: slots
+              });
+            }} placeholder="Clique nos horários que você NÃO pode ter aula" />
             </div>
           </div>
         </CardContent>
@@ -61,29 +57,17 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         <CardContent className="space-y-6">
           <div>
             <Label>Peso das Vagas Disponíveis: {configuration.weightVacancies.toFixed(1)}</Label>
-            <Slider
-              value={[configuration.weightVacancies]}
-              onValueChange={(value) => updateConfig({ weightVacancies: value[0] })}
-              min={0}
-              max={10}
-              step={0.1}
-              className="mt-2"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Prioriza matérias com mais vagas disponíveis
-            </p>
+            <Slider value={[configuration.weightVacancies]} onValueChange={value => updateConfig({
+            weightVacancies: value[0]
+          })} min={0} max={10} step={0.1} className="mt-2" />
+            <p className="text-xs text-muted-foreground mt-1">Prioriza turmas com mais vagas disponíveis</p>
           </div>
 
           <div>
             <Label>Peso dos Amigos: {configuration.weightFriend.toFixed(1)}</Label>
-            <Slider
-              value={[configuration.weightFriend]}
-              onValueChange={(value) => updateConfig({ weightFriend: value[0] })}
-              min={0}
-              max={10}
-              step={0.1}
-              className="mt-2"
-            />
+            <Slider value={[configuration.weightFriend]} onValueChange={value => updateConfig({
+            weightFriend: value[0]
+          })} min={0} max={10} step={0.1} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-1">
               Prioriza matérias onde você tem amigos
             </p>
@@ -91,22 +75,15 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
 
           <div>
             <Label>Peso da Dificuldade: {configuration.weightDifficulty.toFixed(1)}</Label>
-            <Slider
-              value={[configuration.weightDifficulty]}
-              onValueChange={(value) => updateConfig({ weightDifficulty: value[0] })}
-              min={0}
-              max={10}
-              step={0.1}
-              className="mt-2"
-            />
+            <Slider value={[configuration.weightDifficulty]} onValueChange={value => updateConfig({
+            weightDifficulty: value[0]
+          })} min={0} max={10} step={0.1} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-1">
               Prioriza professores com menor dificuldade
             </p>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default ConfigurationPanel;
