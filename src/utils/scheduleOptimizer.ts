@@ -24,25 +24,8 @@ export class ScheduleOptimizer {
     // Agrupar matérias por código
     const subjectGroups = this.groupSubjectsByCode(processedSubjects);
     
-    // Aplicar algoritmo de otimização baseado na estratégia
-    let optimizedSubjects: Subject[] = [];
-    
-    switch (this.configuration.strategy) {
-      case 'maximize':
-        optimizedSubjects = this.maximizeSubjects(subjectGroups);
-        break;
-      case 'free-days':
-        optimizedSubjects = this.optimizeWithFreeDays(subjectGroups);
-        break;
-      case 'half-period':
-        optimizedSubjects = this.optimizeHalfPeriod(subjectGroups);
-        break;
-      case 'availability':
-        optimizedSubjects = this.optimizeWithAvailability(subjectGroups);
-        break;
-      default:
-        optimizedSubjects = this.maximizeSubjects(subjectGroups);
-    }
+    // Aplicar otimização respeitando disponibilidade
+    const optimizedSubjects = this.optimizeWithAvailability(subjectGroups);
 
     const conflicts = this.detectConflicts(optimizedSubjects);
     
@@ -55,14 +38,6 @@ export class ScheduleOptimizer {
 
   private optimizeWithAvailability(subjectGroups: { [key: string]: Subject[] }): Subject[] {
     const unavailableSlots = this.configuration.unavailableSlots || [];
-    const selected: Subject[] = [];
-    const usedTimeSlots = new Set<string>();
-
-    // Adicionar horários indisponíveis aos slots já usados
-    unavailableSlots.forEach(slot => {
-      usedTimeSlots.add(slot);
-    });
-
     console.log('Horários indisponíveis:', unavailableSlots);
 
     // Filtrar matérias que não conflitam com horários indisponíveis

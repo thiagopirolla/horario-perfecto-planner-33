@@ -16,8 +16,6 @@ const Index = () => {
     weightVacancies: 1.0,
     weightFriend: 5.0,
     weightDifficulty: 3.0,
-    strategy: 'maximize',
-    freeDays: ['Segunda', 'Sexta'],
     unavailableSlots: []
   });
   const [optimizedSchedule, setOptimizedSchedule] = useState<OptimizedSchedule | null>(null);

@@ -25,8 +25,6 @@ export interface ScheduleConfiguration {
   weightVacancies: number;
   weightFriend: number;
   weightDifficulty: number;
-  strategy: 'maximize' | 'free-days' | 'half-period' | 'availability';
-  freeDays?: string[];
   unavailableSlots?: string[];
 }
 

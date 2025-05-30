@@ -1,10 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Target, Calendar, Clock, XCircle } from 'lucide-react';
+import { Settings, XCircle } from 'lucide-react';
 import { ScheduleConfiguration } from '@/types/schedule';
 import TimeSlotSelector from './TimeSlotSelector';
 
@@ -21,107 +20,33 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
     onConfigurationChange({ ...configuration, ...updates });
   };
 
-  const freeDayOptions = [
-    { value: 'seg-ter', label: 'Segunda e Terça', days: ['Segunda', 'Terça'] },
-    { value: 'qui-sex', label: 'Quinta e Sexta', days: ['Quinta', 'Sexta'] },
-    { value: 'seg-sex', label: 'Segunda e Sexta', days: ['Segunda', 'Sexta'] }
-  ];
-
   return (
     <div className="space-y-6">
       <Card className="animate-fade-in">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5" />
-            Estratégia de Otimização
+            <XCircle className="w-5 h-5" />
+            Disponibilidade de Horários
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
-              <Label>Estratégia Principal</Label>
-              <Select
-                value={configuration.strategy}
-                onValueChange={(value: 'maximize' | 'free-days' | 'half-period' | 'availability') =>
-                  updateConfig({ strategy: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="maximize">
-                    <div className="flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      Maximizar Matérias
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="free-days">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Dias Livres
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="half-period">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      Meio Período Livre
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="availability">
-                    <div className="flex items-center gap-2">
-                      <XCircle className="w-4 h-4" />
-                      Respeitar Disponibilidade
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Horários Indisponíveis</Label>
+              <p className="text-sm text-muted-foreground mb-3">
+                Selecione os horários em que você <strong>não pode</strong> ter aulas. 
+                O sistema irá otimizar sua grade respeitando essas restrições e maximizando 
+                o número de matérias possíveis.
+              </p>
+              <TimeSlotSelector
+                value={configuration.unavailableSlots?.join(', ') || ''}
+                onChange={(value) => {
+                  const slots = value ? value.split(', ').filter(slot => slot.trim() !== '') : [];
+                  updateConfig({ unavailableSlots: slots });
+                }}
+                placeholder="Clique nos horários que você NÃO pode ter aula"
+              />
             </div>
-
-            {configuration.strategy === 'free-days' && (
-              <div>
-                <Label>Configuração de Dias Livres</Label>
-                <Select
-                  value={freeDayOptions.find(opt => 
-                    opt.days.every(day => configuration.freeDays?.includes(day))
-                  )?.value || 'seg-sex'}
-                  onValueChange={(value) => {
-                    const option = freeDayOptions.find(opt => opt.value === value);
-                    if (option) {
-                      updateConfig({ freeDays: option.days });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {freeDayOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {configuration.strategy === 'availability' && (
-              <div>
-                <Label>Horários Indisponíveis</Label>
-                <TimeSlotSelector
-                  value={configuration.unavailableSlots?.join(', ') || ''}
-                  onChange={(value) => {
-                    const slots = value ? value.split(', ').filter(slot => slot.trim() !== '') : [];
-                    updateConfig({ unavailableSlots: slots });
-                  }}
-                  placeholder="Selecione horários que você NÃO pode ter aula"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Selecione os horários em que você não está disponível para ter aulas
-                </p>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
