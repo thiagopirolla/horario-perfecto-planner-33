@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Trash2, FormInput, TableIcon, Edit } from 'lucide-react';
+import { Plus, Trash2, FormInput, TableIcon, Edit, Copy } from 'lucide-react';
 import { Subject } from '@/types/schedule';
 import SubjectTable from './SubjectTable';
 import TimeSlotSelector from './TimeSlotSelector';
+import MultipleClassForm from './MultipleClassForm';
 
 interface SubjectFormProps {
   subjects: Subject[];
@@ -79,14 +79,18 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
   return (
     <div className="space-y-6">
       <Tabs defaultValue="form" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="form" className="flex items-center gap-2">
             <FormInput className="w-4 h-4" />
-            Formulário Individual
+            Individual
+          </TabsTrigger>
+          <TabsTrigger value="multiple" className="flex items-center gap-2">
+            <Copy className="w-4 h-4" />
+            Múltiplas Turmas
           </TabsTrigger>
           <TabsTrigger value="table" className="flex items-center gap-2">
             <TableIcon className="w-4 h-4" />
-            Tabela em Lote
+            Tabela
           </TabsTrigger>
         </TabsList>
 
@@ -213,6 +217,13 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
           </Card>
         </TabsContent>
 
+        <TabsContent value="multiple">
+          <MultipleClassForm 
+            subjects={subjects}
+            onSubjectsChange={onSubjectsChange}
+          />
+        </TabsContent>
+
         <TabsContent value="table">
           <SubjectTable 
             subjects={subjects}
@@ -236,47 +247,74 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                   {editingSubject?.id === subject.id ? (
                     <div className="flex-1 space-y-2">
                       <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          value={editingSubject.code}
-                          onChange={(e) => setEditingSubject({...editingSubject, code: e.target.value})}
-                          placeholder="Código"
-                        />
-                        <Input
-                          value={editingSubject.name}
-                          onChange={(e) => setEditingSubject({...editingSubject, name: e.target.value})}
-                          placeholder="Nome"
+                        <div>
+                          <Label htmlFor="edit-code">Código</Label>
+                          <Input
+                            id="edit-code"
+                            value={editingSubject.code}
+                            onChange={(e) => setEditingSubject({...editingSubject, code: e.target.value})}
+                            placeholder="Código"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-name">Nome</Label>
+                          <Input
+                            id="edit-name"
+                            value={editingSubject.name}
+                            onChange={(e) => setEditingSubject({...editingSubject, name: e.target.value})}
+                            placeholder="Nome"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor="edit-class">Turma</Label>
+                          <Input
+                            id="edit-class"
+                            value={editingSubject.class}
+                            onChange={(e) => setEditingSubject({...editingSubject, class: e.target.value})}
+                            placeholder="Turma"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-professor">Professor</Label>
+                          <Input
+                            id="edit-professor"
+                            value={editingSubject.professor}
+                            onChange={(e) => setEditingSubject({...editingSubject, professor: e.target.value})}
+                            placeholder="Professor"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-schedule">Horário</Label>
+                        <TimeSlotSelector
+                          value={editingSubject.schedule}
+                          onChange={(schedule) => setEditingSubject({...editingSubject, schedule})}
+                          placeholder="Horário"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          value={editingSubject.class}
-                          onChange={(e) => setEditingSubject({...editingSubject, class: e.target.value})}
-                          placeholder="Turma"
-                        />
-                        <Input
-                          value={editingSubject.professor}
-                          onChange={(e) => setEditingSubject({...editingSubject, professor: e.target.value})}
-                          placeholder="Professor"
-                        />
-                      </div>
-                      <TimeSlotSelector
-                        value={editingSubject.schedule}
-                        onChange={(schedule) => setEditingSubject({...editingSubject, schedule})}
-                        placeholder="Horário"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          type="number"
-                          value={editingSubject.capacity}
-                          onChange={(e) => setEditingSubject({...editingSubject, capacity: parseInt(e.target.value) || 0})}
-                          placeholder="Capacidade"
-                        />
-                        <Input
-                          type="number"
-                          value={editingSubject.filledSpots}
-                          onChange={(e) => setEditingSubject({...editingSubject, filledSpots: parseInt(e.target.value) || 0})}
-                          placeholder="Preenchidas"
-                        />
+                        <div>
+                          <Label htmlFor="edit-capacity">Capacidade</Label>
+                          <Input
+                            id="edit-capacity"
+                            type="number"
+                            value={editingSubject.capacity}
+                            onChange={(e) => setEditingSubject({...editingSubject, capacity: parseInt(e.target.value) || 0})}
+                            placeholder="Capacidade"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="edit-filled">Preenchidas</Label>
+                          <Input
+                            id="edit-filled"
+                            type="number"
+                            value={editingSubject.filledSpots}
+                            onChange={(e) => setEditingSubject({...editingSubject, filledSpots: parseInt(e.target.value) || 0})}
+                            placeholder="Preenchidas"
+                          />
+                        </div>
                       </div>
                       <div>
                         <Label>Dificuldade: {editingSubject.difficulty}</Label>
@@ -289,17 +327,21 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                           className="mt-1"
                         />
                       </div>
-                      <div className="flex gap-2">
-                        <Switch
-                          checked={editingSubject.required}
-                          onCheckedChange={(checked) => setEditingSubject({...editingSubject, required: checked})}
-                        />
-                        <Label>Obrigatória</Label>
-                        <Switch
-                          checked={editingSubject.hasFriend}
-                          onCheckedChange={(checked) => setEditingSubject({...editingSubject, hasFriend: checked})}
-                        />
-                        <Label>Tem Amigo</Label>
+                      <div className="flex gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={editingSubject.required}
+                            onCheckedChange={(checked) => setEditingSubject({...editingSubject, required: checked})}
+                          />
+                          <Label>Obrigatória</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={editingSubject.hasFriend}
+                            onCheckedChange={(checked) => setEditingSubject({...editingSubject, hasFriend: checked})}
+                          />
+                          <Label>Tem Amigo</Label>
+                        </div>
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" onClick={saveEdit}>Salvar</Button>
