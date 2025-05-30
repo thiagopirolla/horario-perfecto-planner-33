@@ -68,9 +68,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
             <Slider value={[configuration.weightFriend]} onValueChange={value => updateConfig({
             weightFriend: value[0]
           })} min={0} max={10} step={0.1} className="mt-2" />
-            <p className="text-xs text-muted-foreground mt-1">
-              Prioriza matérias onde você tem amigos
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Prioriza turmas onde você tem amigos</p>
           </div>
 
           <div>
