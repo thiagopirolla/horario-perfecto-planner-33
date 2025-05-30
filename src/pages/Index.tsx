@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -76,19 +77,11 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="gradient-bg text-white py-12">
+      <div className="gradient-bg text-white py-6">
         <div className="container mx-auto px-4">
-          <div className="text-center animate-fade-in">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <CalendarDays className="w-12 h-12" />
-              <h1 className="text-4xl md:text-5xl font-bold">OptSchedule</h1>
-            </div>
-            <p className="text-xl md:text-2xl mb-6 opacity-90">
-              Otimização Inteligente de Horários Acadêmicos
-            </p>
-            <p className="text-lg opacity-80 max-w-2xl mx-auto">
-              Use algoritmos de pesquisa operacional para encontrar a melhor combinação 
-              de matérias e horários para seu semestre
+          <div className="text-center">
+            <p className="text-lg">
+              Use esse sistema para montar a grade da maneira mais eficiente possível
             </p>
           </div>
         </div>
