@@ -1,3 +1,4 @@
+
 import { Subject, TimeSlot, ScheduleConfiguration, OptimizedSchedule } from '@/types/schedule';
 
 export class ScheduleOptimizer {
@@ -170,23 +171,6 @@ export class ScheduleOptimizer {
     return selected;
   }
 
-  private optimizeWithFreeDays(subjectGroups: { [key: string]: Subject[] }): Subject[] {
-    const freeDays = this.configuration.freeDays || ['Segunda', 'Sexta'];
-    const selected: Subject[] = [];
-    const usedTimeSlots = new Set<string>();
-
-    // Filtrar matérias que não conflitam com dias livres
-    const validSubjects: { [key: string]: Subject[] } = {};
-    
-    for (const [code, subjects] of Object.entries(subjectGroups)) {
-      validSubjects[code] = subjects.filter(subject => 
-        !this.hasConflictWithFreeDays(subject, freeDays)
-      );
-    }
-
-    return this.maximizeSubjects(validSubjects);
-  }
-
   private optimizeHalfPeriod(subjectGroups: { [key: string]: Subject[] }): Subject[] {
     const selected: Subject[] = [];
     const dayPeriods: { [key: string]: 'morning' | 'afternoon' | null } = {};
@@ -248,11 +232,6 @@ export class ScheduleOptimizer {
         usedTimeSlots.add(slotKey);
       }
     }
-  }
-
-  private hasConflictWithFreeDays(subject: Subject, freeDays: string[]): boolean {
-    const timeSlots = this.parseSchedule(subject.schedule);
-    return timeSlots.some(slot => freeDays.includes(slot.day));
   }
 
   private canScheduleHalfPeriod(
