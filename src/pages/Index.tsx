@@ -9,6 +9,8 @@ import ConfigurationPanel from '@/components/ConfigurationPanel';
 import ScheduleTable from '@/components/ScheduleTable';
 import { Subject, ScheduleConfiguration, OptimizedSchedule } from '@/types/schedule';
 import { ScheduleOptimizer } from '@/utils/scheduleOptimizer';
+import CSVExporter from '@/components/CSVExporter';
+import CSVImporter from '@/components/CSVImporter';
 
 const Index = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -20,6 +22,10 @@ const Index = () => {
   });
   const [optimizedSchedule, setOptimizedSchedule] = useState<OptimizedSchedule | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
+
+  const handleSubjectsImport = (importedSubjects: Subject[]) => {
+    setSubjects(prevSubjects => [...prevSubjects, ...importedSubjects]);
+  };
 
   const runOptimization = async () => {
     if (subjects.length === 0) {
@@ -110,24 +116,28 @@ const Index = () => {
               <Sparkles className="w-4 h-4" />
               <span>{subjects.length} matérias cadastradas</span>
             </div>
-            <Button 
-              onClick={runOptimization}
-              disabled={isOptimizing || subjects.length === 0}
-              size="lg"
-              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
-            >
-              {isOptimizing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Otimizando...
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 mr-2" />
-                  Otimizar Horário
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <CSVExporter subjects={subjects} />
+              <CSVImporter onSubjectsImport={handleSubjectsImport} />
+              <Button 
+                onClick={runOptimization}
+                disabled={isOptimizing || subjects.length === 0}
+                size="lg"
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+              >
+                {isOptimizing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Otimizando...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    Otimizar Horário
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           <TabsContent value="subjects" className="space-y-6">
