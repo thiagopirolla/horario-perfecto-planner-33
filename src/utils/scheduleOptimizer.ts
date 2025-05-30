@@ -1,4 +1,3 @@
-
 import { Subject, TimeSlot, ScheduleConfiguration, OptimizedSchedule } from '@/types/schedule';
 
 export class ScheduleOptimizer {
@@ -38,6 +37,9 @@ export class ScheduleOptimizer {
       case 'half-period':
         optimizedSubjects = this.optimizeHalfPeriod(subjectGroups);
         break;
+      case 'availability':
+        optimizedSubjects = this.optimizeWithAvailability(subjectGroups);
+        break;
       default:
         optimizedSubjects = this.maximizeSubjects(subjectGroups);
     }
@@ -49,6 +51,58 @@ export class ScheduleOptimizer {
       totalSubjects: optimizedSubjects.length,
       conflicts
     };
+  }
+
+  private optimizeWithAvailability(subjectGroups: { [key: string]: Subject[] }): Subject[] {
+    const unavailableSlots = this.configuration.unavailableSlots || [];
+    const selected: Subject[] = [];
+    const usedTimeSlots = new Set<string>();
+
+    // Adicionar horários indisponíveis aos slots já usados
+    unavailableSlots.forEach(slot => {
+      usedTimeSlots.add(slot);
+    });
+
+    console.log('Horários indisponíveis:', unavailableSlots);
+
+    // Filtrar matérias que não conflitam com horários indisponíveis
+    const validSubjects: { [key: string]: Subject[] } = {};
+    
+    for (const [code, subjects] of Object.entries(subjectGroups)) {
+      validSubjects[code] = subjects.filter(subject => 
+        !this.hasConflictWithUnavailableSlots(subject, unavailableSlots)
+      );
+    }
+
+    console.log('Matérias válidas após filtrar indisponibilidade:', Object.keys(validSubjects).length);
+
+    return this.maximizeSubjects(validSubjects);
+  }
+
+  private hasConflictWithUnavailableSlots(subject: Subject, unavailableSlots: string[]): boolean {
+    const subjectSlots = this.parseSchedule(subject.schedule);
+    
+    for (const slot of subjectSlots) {
+      for (let hour = slot.startTime; hour < slot.endTime; hour += 2) {
+        const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
+        if (unavailableSlots.includes(slotKey)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  private getDayAbbreviation(day: string): string {
+    const dayMap: { [key: string]: string } = {
+      'Segunda': 'Seg',
+      'Terça': 'Ter',
+      'Quarta': 'Qua',
+      'Quinta': 'Qui',
+      'Sexta': 'Sex'
+    };
+    return dayMap[day] || day;
   }
 
   private parseSchedule(scheduleStr: string): TimeSlot[] {
@@ -200,7 +254,7 @@ export class ScheduleOptimizer {
     
     for (const slot of timeSlots) {
       for (let hour = slot.startTime; hour < slot.endTime; hour += 2) {
-        const slotKey = `${slot.day}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
+        const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
         if (usedTimeSlots.has(slotKey)) {
           return true;
         }
@@ -215,7 +269,7 @@ export class ScheduleOptimizer {
     
     for (const slot of timeSlots) {
       for (let hour = slot.startTime; hour < slot.endTime; hour += 2) {
-        const slotKey = `${slot.day}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
+        const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
         usedTimeSlots.add(slotKey);
       }
     }
@@ -267,7 +321,7 @@ export class ScheduleOptimizer {
       
       for (const slot of timeSlots) {
         for (let hour = slot.startTime; hour < slot.endTime; hour += 2) {
-          const slotKey = `${slot.day}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
+          const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
           
           if (usedTimeSlots.has(slotKey)) {
             const conflictingSubject = usedTimeSlots.get(slotKey);

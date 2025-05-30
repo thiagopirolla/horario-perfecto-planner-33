@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Settings, Target, Calendar, Clock } from 'lucide-react';
+import { Settings, Target, Calendar, Clock, XCircle } from 'lucide-react';
 import { ScheduleConfiguration } from '@/types/schedule';
+import TimeSlotSelector from './TimeSlotSelector';
 
 interface ConfigurationPanelProps {
   configuration: ScheduleConfiguration;
@@ -42,7 +42,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               <Label>Estratégia Principal</Label>
               <Select
                 value={configuration.strategy}
-                onValueChange={(value: 'maximize' | 'free-days' | 'half-period') =>
+                onValueChange={(value: 'maximize' | 'free-days' | 'half-period' | 'availability') =>
                   updateConfig({ strategy: value })
                 }
               >
@@ -66,6 +66,12 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4" />
                       Meio Período Livre
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="availability">
+                    <div className="flex items-center gap-2">
+                      <XCircle className="w-4 h-4" />
+                      Respeitar Disponibilidade
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -97,6 +103,23 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {configuration.strategy === 'availability' && (
+              <div>
+                <Label>Horários Indisponíveis</Label>
+                <TimeSlotSelector
+                  value={configuration.unavailableSlots?.join(', ') || ''}
+                  onChange={(value) => {
+                    const slots = value ? value.split(', ').filter(slot => slot.trim() !== '') : [];
+                    updateConfig({ unavailableSlots: slots });
+                  }}
+                  placeholder="Selecione horários que você NÃO pode ter aula"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selecione os horários em que você não está disponível para ter aulas
+                </p>
               </div>
             )}
           </div>

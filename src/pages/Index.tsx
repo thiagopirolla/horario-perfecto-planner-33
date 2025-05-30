@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,8 @@ const Index = () => {
     weightFriend: 5.0,
     weightDifficulty: 3.0,
     strategy: 'maximize',
-    freeDays: ['Segunda', 'Sexta']
+    freeDays: ['Segunda', 'Sexta'],
+    unavailableSlots: []
   });
   const [optimizedSchedule, setOptimizedSchedule] = useState<OptimizedSchedule | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
