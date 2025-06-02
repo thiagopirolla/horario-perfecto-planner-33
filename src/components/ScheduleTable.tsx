@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, Star, AlertTriangle } from 'lucide-react';
+import { Calendar, Users, Star, Heart } from 'lucide-react';
 import { OptimizedSchedule } from '@/types/schedule';
 
 interface ScheduleTableProps {
@@ -72,6 +73,17 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule }) => {
     return timeSlots;
   };
 
+  const calculateAverageGrade = () => {
+    if (!schedule?.subjects || schedule.subjects.length === 0) return 0;
+    const totalGrade = schedule.subjects.reduce((sum, subject) => sum + (5 - subject.difficulty + 1), 0);
+    return (totalGrade / schedule.subjects.length).toFixed(1);
+  };
+
+  const countSubjectsWithFriend = () => {
+    if (!schedule?.subjects) return 0;
+    return schedule.subjects.filter(subject => subject.hasFriend).length;
+  };
+
   const tableData = parseScheduleForTable();
 
   if (!schedule) {
@@ -114,13 +126,8 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule }) => {
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 text-yellow-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Prioridade Média</p>
-                <p className="text-2xl font-bold">
-                  {schedule.subjects.length > 0 
-                    ? (schedule.subjects.reduce((sum, s) => sum + (s.priority || 0), 0) / schedule.subjects.length).toFixed(1)
-                    : '0.0'
-                  }
-                </p>
+                <p className="text-sm text-muted-foreground">Média de Notas</p>
+                <p className="text-2xl font-bold">{calculateAverageGrade()}</p>
               </div>
             </div>
           </CardContent>
@@ -129,36 +136,15 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule }) => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <Heart className="w-5 h-5 text-pink-500" />
               <div>
-                <p className="text-sm text-muted-foreground">Conflitos</p>
-                <p className="text-2xl font-bold">{schedule.conflicts.length}</p>
+                <p className="text-sm text-muted-foreground">Matérias com Amigo</p>
+                <p className="text-2xl font-bold">{countSubjectsWithFriend()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Conflitos */}
-      {schedule.conflicts.length > 0 && (
-        <Card className="border-red-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="w-5 h-5" />
-              Conflitos Detectados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {schedule.conflicts.map((conflict, index) => (
-                <div key={index} className="p-2 bg-red-50 rounded text-sm text-red-700">
-                  {conflict}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Tabela de Horários */}
       <Card className="animate-fade-in">
