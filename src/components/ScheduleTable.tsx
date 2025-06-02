@@ -75,7 +75,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({ schedule }) => {
 
   const calculateAverageGrade = () => {
     if (!schedule?.subjects || schedule.subjects.length === 0) return 0;
-    const totalGrade = schedule.subjects.reduce((sum, subject) => sum + (5 - subject.difficulty + 1), 0);
+    const totalGrade = schedule.subjects.reduce((sum, subject) => sum + subject.difficulty, 0);
     return (totalGrade / schedule.subjects.length).toFixed(1);
   };
 
