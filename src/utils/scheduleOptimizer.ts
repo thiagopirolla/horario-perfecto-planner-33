@@ -1,4 +1,3 @@
-
 import { Subject, TimeSlot, ScheduleConfiguration, OptimizedSchedule } from '@/types/schedule';
 
 export class ScheduleOptimizer {
@@ -15,18 +14,24 @@ export class ScheduleOptimizer {
   optimize(): OptimizedSchedule {
     console.log('Iniciando otimização com', this.subjects.length, 'matérias');
     
+    // Verificar se todos os pesos estão próximos de zero
+    const isMaximizationMode = this.isMaximizationMode();
+    console.log('Modo maximização:', isMaximizationMode);
+    
     // Preprocessar horários das matérias
     const processedSubjects = this.subjects.map(subject => ({
       ...subject,
       timeSlots: this.parseSchedule(subject.schedule),
-      priority: this.calculatePriority(subject)
+      priority: isMaximizationMode ? 1 : this.calculatePriority(subject)
     }));
 
     // Agrupar matérias por código
     const subjectGroups = this.groupSubjectsByCode(processedSubjects);
     
     // Aplicar otimização respeitando disponibilidade
-    const optimizedSubjects = this.optimizeWithAvailability(subjectGroups);
+    const optimizedSubjects = isMaximizationMode 
+      ? this.maximizeSubjectsOnly(subjectGroups)
+      : this.optimizeWithAvailability(subjectGroups);
 
     const conflicts = this.detectConflicts(optimizedSubjects);
     
@@ -35,6 +40,88 @@ export class ScheduleOptimizer {
       totalSubjects: optimizedSubjects.length,
       conflicts
     };
+  }
+
+  private isMaximizationMode(): boolean {
+    const threshold = 0.1;
+    return this.configuration.weightVacancies <= threshold &&
+           this.configuration.weightFriend <= threshold &&
+           this.configuration.weightDifficulty <= threshold;
+  }
+
+  private maximizeSubjectsOnly(subjectGroups: { [key: string]: Subject[] }): Subject[] {
+    console.log('Executando modo maximização pura');
+    const unavailableSlots = this.configuration.unavailableSlots || [];
+    
+    // Filtrar matérias que não conflitam com horários indisponíveis
+    const validSubjects: { [key: string]: Subject[] } = {};
+    
+    for (const [code, subjects] of Object.entries(subjectGroups)) {
+      validSubjects[code] = subjects.filter(subject => 
+        !this.hasConflictWithUnavailableSlots(subject, unavailableSlots)
+      );
+    }
+
+    // Tentar todas as combinações possíveis para encontrar a melhor
+    return this.findMaximumSubjects(validSubjects);
+  }
+
+  private findMaximumSubjects(subjectGroups: { [key: string]: Subject[] }): Subject[] {
+    const subjectCodes = Object.keys(subjectGroups);
+    let bestCombination: Subject[] = [];
+    let maxSubjects = 0;
+
+    // Gerar todas as combinações possíveis de turmas
+    const generateCombinations = (codeIndex: number, currentCombination: Subject[]): void => {
+      if (codeIndex === subjectCodes.length) {
+        // Verificar se a combinação atual é válida (sem conflitos)
+        if (this.isValidCombination(currentCombination)) {
+          if (currentCombination.length > maxSubjects) {
+            maxSubjects = currentCombination.length;
+            bestCombination = [...currentCombination];
+            console.log('Nova melhor combinação encontrada:', maxSubjects, 'matérias');
+          }
+        }
+        return;
+      }
+
+      const currentCode = subjectCodes[codeIndex];
+      const subjects = subjectGroups[currentCode];
+
+      // Tentar sem nenhuma turma desta matéria
+      generateCombinations(codeIndex + 1, currentCombination);
+
+      // Tentar com cada turma desta matéria
+      for (const subject of subjects) {
+        generateCombinations(codeIndex + 1, [...currentCombination, subject]);
+      }
+    };
+
+    generateCombinations(0, []);
+    
+    console.log('Combinação final encontrada:', bestCombination.length, 'matérias');
+    return bestCombination;
+  }
+
+  private isValidCombination(subjects: Subject[]): boolean {
+    const usedTimeSlots = new Set<string>();
+
+    for (const subject of subjects) {
+      const timeSlots = this.parseSchedule(subject.schedule);
+      
+      for (const slot of timeSlots) {
+        for (let hour = slot.startTime; hour < slot.endTime; hour += 2) {
+          const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
+          
+          if (usedTimeSlots.has(slotKey)) {
+            return false; // Conflito encontrado
+          }
+          usedTimeSlots.add(slotKey);
+        }
+      }
+    }
+
+    return true; // Nenhum conflito
   }
 
   private optimizeWithAvailability(subjectGroups: { [key: string]: Subject[] }): Subject[] {
