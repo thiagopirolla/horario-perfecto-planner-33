@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Plus, Trash2, FormInput, TableIcon, Edit, Copy } from 'lucide-react';
 import { Subject } from '@/types/schedule';
 import { toast } from '@/hooks/use-toast';
@@ -116,6 +117,23 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
   const cancelEdit = () => {
     setEditingSubject(null);
   };
+
+  // Função para agrupar matérias por código e nome
+  const groupSubjectsByCodeAndName = (subjects: Subject[]) => {
+    const groups: { [key: string]: Subject[] } = {};
+    
+    subjects.forEach(subject => {
+      const key = `${subject.code}-${subject.name}`;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(subject);
+    });
+    
+    return groups;
+  };
+
+  const groupedSubjects = groupSubjectsByCodeAndName(subjects);
 
   return (
     <div className="space-y-6">
@@ -279,151 +297,172 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
             <CardTitle>Matérias Cadastradas ({subjects.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {subjects.map((subject) => (
-                <div
-                  key={subject.id}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                >
-                  {editingSubject?.id === subject.id ? (
-                    <div className="flex-1 space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="edit-code">Código *</Label>
-                          <Input
-                            id="edit-code"
-                            value={editingSubject.code}
-                            onChange={(e) => setEditingSubject({...editingSubject, code: e.target.value})}
-                            placeholder="Código"
-                          />
+            <Accordion type="multiple" className="w-full">
+              {Object.entries(groupedSubjects).map(([key, subjectGroup]) => {
+                const firstSubject = subjectGroup[0];
+                return (
+                  <AccordionItem key={key} value={key}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex flex-col items-start text-left">
+                        <div className="font-medium">
+                          {firstSubject.name} ({firstSubject.code})
                         </div>
-                        <div>
-                          <Label htmlFor="edit-name">Nome *</Label>
-                          <Input
-                            id="edit-name"
-                            value={editingSubject.name}
-                            onChange={(e) => setEditingSubject({...editingSubject, name: e.target.value})}
-                            placeholder="Nome"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="edit-class">Turma</Label>
-                          <Input
-                            id="edit-class"
-                            value={editingSubject.class}
-                            onChange={(e) => setEditingSubject({...editingSubject, class: e.target.value})}
-                            placeholder="Turma"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="edit-professor">Professor</Label>
-                          <Input
-                            id="edit-professor"
-                            value={editingSubject.professor}
-                            onChange={(e) => setEditingSubject({...editingSubject, professor: e.target.value})}
-                            placeholder="Professor"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="edit-schedule">Horário *</Label>
-                        <TimeSlotSelector
-                          value={editingSubject.schedule}
-                          onChange={(schedule) => setEditingSubject({...editingSubject, schedule})}
-                          placeholder="Horário"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="edit-capacity">Capacidade</Label>
-                          <Input
-                            id="edit-capacity"
-                            type="number"
-                            value={editingSubject.capacity}
-                            onChange={(e) => setEditingSubject({...editingSubject, capacity: parseInt(e.target.value) || 0})}
-                            placeholder="Capacidade"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="edit-filled">Preenchidas</Label>
-                          <Input
-                            id="edit-filled"
-                            type="number"
-                            value={editingSubject.filledSpots}
-                            onChange={(e) => setEditingSubject({...editingSubject, filledSpots: parseInt(e.target.value) || 0})}
-                            placeholder="Preenchidas"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Dificuldade: {editingSubject.difficulty}</Label>
-                        <Slider
-                          value={[editingSubject.difficulty]}
-                          onValueChange={(value) => setEditingSubject({...editingSubject, difficulty: value[0]})}
-                          min={1}
-                          max={5}
-                          step={1}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div className="flex gap-4">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={editingSubject.required}
-                            onCheckedChange={(checked) => setEditingSubject({...editingSubject, required: checked})}
-                          />
-                          <Label>Obrigatória</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            checked={editingSubject.hasFriend}
-                            onCheckedChange={(checked) => setEditingSubject({...editingSubject, hasFriend: checked})}
-                          />
-                          <Label>Tem Amigo</Label>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={saveEdit}>Salvar</Button>
-                        <Button size="sm" variant="outline" onClick={cancelEdit}>Cancelar</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex-1">
-                        <div className="font-medium">{subject.name} ({subject.code})</div>
                         <div className="text-sm text-muted-foreground">
-                          Turma {subject.class} • {subject.schedule} • Prof. {subject.professor}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          Vagas: {subject.capacity - subject.filledSpots}/{subject.capacity} • 
-                          Dificuldade: {subject.difficulty}/5 •
-                          {subject.hasFriend && ' Com amigo •'}
-                          {subject.required && ' Obrigatória'}
+                          {subjectGroup.length} turma(s) cadastrada(s)
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEditing(subject)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeSubject(subject.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3 pt-2">
+                        {subjectGroup.map((subject) => (
+                          <div
+                            key={subject.id}
+                            className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                          >
+                            {editingSubject?.id === subject.id ? (
+                              <div className="flex-1 space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <Label htmlFor="edit-code">Código *</Label>
+                                    <Input
+                                      id="edit-code"
+                                      value={editingSubject.code}
+                                      onChange={(e) => setEditingSubject({...editingSubject, code: e.target.value})}
+                                      placeholder="Código"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-name">Nome *</Label>
+                                    <Input
+                                      id="edit-name"
+                                      value={editingSubject.name}
+                                      onChange={(e) => setEditingSubject({...editingSubject, name: e.target.value})}
+                                      placeholder="Nome"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <Label htmlFor="edit-class">Turma</Label>
+                                    <Input
+                                      id="edit-class"
+                                      value={editingSubject.class}
+                                      onChange={(e) => setEditingSubject({...editingSubject, class: e.target.value})}
+                                      placeholder="Turma"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-professor">Professor</Label>
+                                    <Input
+                                      id="edit-professor"
+                                      value={editingSubject.professor}
+                                      onChange={(e) => setEditingSubject({...editingSubject, professor: e.target.value})}
+                                      placeholder="Professor"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <Label htmlFor="edit-schedule">Horário *</Label>
+                                  <TimeSlotSelector
+                                    value={editingSubject.schedule}
+                                    onChange={(schedule) => setEditingSubject({...editingSubject, schedule})}
+                                    placeholder="Horário"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <Label htmlFor="edit-capacity">Capacidade</Label>
+                                    <Input
+                                      id="edit-capacity"
+                                      type="number"
+                                      value={editingSubject.capacity}
+                                      onChange={(e) => setEditingSubject({...editingSubject, capacity: parseInt(e.target.value) || 0})}
+                                      placeholder="Capacidade"
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label htmlFor="edit-filled">Preenchidas</Label>
+                                    <Input
+                                      id="edit-filled"
+                                      type="number"
+                                      value={editingSubject.filledSpots}
+                                      onChange={(e) => setEditingSubject({...editingSubject, filledSpots: parseInt(e.target.value) || 0})}
+                                      placeholder="Preenchidas"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <Label>Dificuldade: {editingSubject.difficulty}</Label>
+                                  <Slider
+                                    value={[editingSubject.difficulty]}
+                                    onValueChange={(value) => setEditingSubject({...editingSubject, difficulty: value[0]})}
+                                    min={1}
+                                    max={5}
+                                    step={1}
+                                    className="mt-1"
+                                  />
+                                </div>
+                                <div className="flex gap-4">
+                                  <div className="flex items-center space-x-2">
+                                    <Switch
+                                      checked={editingSubject.required}
+                                      onCheckedChange={(checked) => setEditingSubject({...editingSubject, required: checked})}
+                                    />
+                                    <Label>Obrigatória</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Switch
+                                      checked={editingSubject.hasFriend}
+                                      onCheckedChange={(checked) => setEditingSubject({...editingSubject, hasFriend: checked})}
+                                    />
+                                    <Label>Tem Amigo</Label>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" onClick={saveEdit}>Salvar</Button>
+                                  <Button size="sm" variant="outline" onClick={cancelEdit}>Cancelar</Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex-1">
+                                  <div className="font-medium">Turma {subject.class}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {subject.schedule} • Prof. {subject.professor}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Vagas: {subject.capacity - subject.filledSpots}/{subject.capacity} • 
+                                    Dificuldade: {subject.difficulty}/5 •
+                                    {subject.hasFriend && ' Com amigo •'}
+                                    {subject.required && ' Obrigatória'}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => startEditing(subject)}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => removeSubject(subject.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           </CardContent>
         </Card>
       )}
