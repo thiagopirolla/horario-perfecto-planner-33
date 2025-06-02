@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Plus, Trash2, Copy, Save } from 'lucide-react';
 import { Subject } from '@/types/schedule';
+import { toast } from '@/hooks/use-toast';
 import TimeSlotSelector from './TimeSlotSelector';
 
 interface MultipleClassFormProps {
@@ -72,15 +73,42 @@ const MultipleClassForm: React.FC<MultipleClassFormProps> = ({ subjects, onSubje
   };
 
   const saveAllClasses = () => {
-    if (!subjectCode || !subjectName) {
+    const missingGeneralFields = [];
+    if (!subjectCode.trim()) missingGeneralFields.push('Código da Matéria');
+    if (!subjectName.trim()) missingGeneralFields.push('Nome da Matéria');
+    
+    if (missingGeneralFields.length > 0) {
+      toast({
+        title: "Dados gerais incompletos",
+        description: `Por favor, preencha: ${missingGeneralFields.join(', ')}`,
+        variant: "destructive"
+      });
       return;
     }
 
     const validClasses = classes.filter(c => 
-      c.class.trim() && c.professor.trim() && c.schedule.trim()
+      c.class.trim() && c.schedule.trim()
     );
 
     if (validClasses.length === 0) {
+      toast({
+        title: "Nenhuma turma válida",
+        description: "Por favor, preencha pelo menos Turma e Horário para uma turma.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const incompleteClasses = classes.filter(c => 
+      (c.class.trim() || c.schedule.trim()) && !(c.class.trim() && c.schedule.trim())
+    );
+
+    if (incompleteClasses.length > 0) {
+      toast({
+        title: "Turmas incompletas encontradas",
+        description: "Algumas turmas têm apenas Turma OU Horário preenchidos. Complete ou remova essas linhas.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -100,6 +128,11 @@ const MultipleClassForm: React.FC<MultipleClassFormProps> = ({ subjects, onSubje
     }));
 
     onSubjectsChange([...subjects, ...newSubjects]);
+
+    toast({
+      title: "Turmas cadastradas com sucesso!",
+      description: `${validClasses.length} turma(s) de ${subjectName} foram adicionadas.`
+    });
 
     // Reset form
     setSubjectCode('');
@@ -137,7 +170,7 @@ const MultipleClassForm: React.FC<MultipleClassFormProps> = ({ subjects, onSubje
           <h3 className="font-medium mb-4">Dados Gerais da Matéria</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="subject-code">Código da Matéria</Label>
+              <Label htmlFor="subject-code">Código da Matéria *</Label>
               <Input
                 id="subject-code"
                 value={subjectCode}
@@ -146,7 +179,7 @@ const MultipleClassForm: React.FC<MultipleClassFormProps> = ({ subjects, onSubje
               />
             </div>
             <div>
-              <Label htmlFor="subject-name">Nome da Matéria</Label>
+              <Label htmlFor="subject-name">Nome da Matéria *</Label>
               <Input
                 id="subject-name"
                 value={subjectName}
@@ -185,7 +218,7 @@ const MultipleClassForm: React.FC<MultipleClassFormProps> = ({ subjects, onSubje
               <div key={classData.id} className="border rounded-lg p-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <Label htmlFor={`class-${classData.id}`}>Turma</Label>
+                    <Label htmlFor={`class-${classData.id}`}>Turma *</Label>
                     <Input
                       id={`class-${classData.id}`}
                       value={classData.class}
@@ -203,7 +236,7 @@ const MultipleClassForm: React.FC<MultipleClassFormProps> = ({ subjects, onSubje
                     />
                   </div>
                   <div>
-                    <Label htmlFor={`schedule-${classData.id}`}>Horário</Label>
+                    <Label htmlFor={`schedule-${classData.id}`}>Horário *</Label>
                     <TimeSlotSelector
                       value={classData.schedule}
                       onChange={(schedule) => updateClass(classData.id, 'schedule', schedule)}

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Plus, Save, Trash2, TableIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Subject } from '@/types/schedule';
+import { toast } from '@/hooks/use-toast';
 import TimeSlotSelector from './TimeSlotSelector';
 
 interface SubjectTableProps {
@@ -112,6 +112,26 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
     );
 
     if (validRows.length === 0) {
+      toast({
+        title: "Nenhuma matéria válida",
+        description: "Por favor, preencha pelo menos Código, Nome e Horário para uma matéria.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const incompleteRows = tableRows.filter(row => {
+      const hasAnyData = row.code.trim() || row.name.trim() || row.schedule.trim();
+      const hasAllRequired = row.code.trim() && row.name.trim() && row.schedule.trim();
+      return hasAnyData && !hasAllRequired;
+    });
+
+    if (incompleteRows.length > 0) {
+      toast({
+        title: "Linhas incompletas encontradas",
+        description: "Algumas linhas têm dados parciais. Complete os campos obrigatórios (Código, Nome, Horário) ou remova essas linhas.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -131,6 +151,11 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
     }));
 
     onSubjectsChange([...subjects, ...newSubjects]);
+
+    toast({
+      title: "Matérias cadastradas com sucesso!",
+      description: `${validRows.length} matéria(s) foram adicionadas.`
+    });
 
     // Limpar a tabela após salvar
     setTableRows([
@@ -164,11 +189,11 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Nome</TableHead>
+                <TableHead>Código *</TableHead>
+                <TableHead>Nome *</TableHead>
                 <TableHead>Turma</TableHead>
                 <TableHead>Professor</TableHead>
-                <TableHead>Horário</TableHead>
+                <TableHead>Horário *</TableHead>
                 <TableHead>Cap.</TableHead>
                 <TableHead>Preench.</TableHead>
                 <TableHead>Dificuldade</TableHead>
@@ -292,6 +317,7 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
         </div>
 
         <div className="text-sm text-muted-foreground mt-2">
+          <p>Campos obrigatórios: Código, Nome e Horário</p>
           <p>Formato do horário: Seg.08-10, Qua.14-16</p>
           <p>Use: Seg, Ter, Qua, Qui, Sex para os dias da semana</p>
         </div>

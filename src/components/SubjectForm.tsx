@@ -8,6 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Trash2, FormInput, TableIcon, Edit, Copy } from 'lucide-react';
 import { Subject } from '@/types/schedule';
+import { toast } from '@/hooks/use-toast';
 import SubjectTable from './SubjectTable';
 import TimeSlotSelector from './TimeSlotSelector';
 import MultipleClassForm from './MultipleClassForm';
@@ -34,27 +35,51 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
 
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
 
+  const validateRequiredFields = (subject: Omit<Subject, 'id'>) => {
+    const missingFields = [];
+    
+    if (!subject.code.trim()) missingFields.push('Código da Matéria');
+    if (!subject.name.trim()) missingFields.push('Nome da Matéria');
+    if (!subject.schedule.trim()) missingFields.push('Horário');
+    
+    return missingFields;
+  };
+
   const addSubject = () => {
-    if (newSubject.code && newSubject.name && newSubject.schedule) {
-      const subject: Subject = {
-        ...newSubject,
-        id: Date.now().toString()
-      };
-      onSubjectsChange([...subjects, subject]);
-      setNewSubject({
-        code: '',
-        name: '',
-        required: false,
-        class: '',
-        capacity: 40,
-        filledSpots: 0,
-        professor: '',
-        difficulty: 3,
-        hasFriend: false,
-        schedule: '',
-        hours: 2
+    const missingFields = validateRequiredFields(newSubject);
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "Campos obrigatórios não preenchidos",
+        description: `Por favor, preencha: ${missingFields.join(', ')}`,
+        variant: "destructive"
       });
+      return;
     }
+
+    const subject: Subject = {
+      ...newSubject,
+      id: Date.now().toString()
+    };
+    onSubjectsChange([...subjects, subject]);
+    setNewSubject({
+      code: '',
+      name: '',
+      required: false,
+      class: '',
+      capacity: 40,
+      filledSpots: 0,
+      professor: '',
+      difficulty: 3,
+      hasFriend: false,
+      schedule: '',
+      hours: 2
+    });
+    
+    toast({
+      title: "Matéria adicionada com sucesso!",
+      description: `${subject.name} foi cadastrada.`
+    });
   };
 
   const removeSubject = (id: string) => {
@@ -66,10 +91,26 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
   };
 
   const saveEdit = () => {
-    if (editingSubject) {
-      onSubjectsChange(subjects.map(s => s.id === editingSubject.id ? editingSubject : s));
-      setEditingSubject(null);
+    if (!editingSubject) return;
+    
+    const missingFields = validateRequiredFields(editingSubject);
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "Campos obrigatórios não preenchidos",
+        description: `Por favor, preencha: ${missingFields.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
     }
+
+    onSubjectsChange(subjects.map(s => s.id === editingSubject.id ? editingSubject : s));
+    setEditingSubject(null);
+    
+    toast({
+      title: "Matéria atualizada com sucesso!",
+      description: `${editingSubject.name} foi atualizada.`
+    });
   };
 
   const cancelEdit = () => {
@@ -105,7 +146,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="code">Código da Matéria</Label>
+                  <Label htmlFor="code">Código da Matéria *</Label>
                   <Input
                     id="code"
                     value={newSubject.code}
@@ -114,7 +155,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                   />
                 </div>
                 <div>
-                  <Label htmlFor="name">Nome da Matéria</Label>
+                  <Label htmlFor="name">Nome da Matéria *</Label>
                   <Input
                     id="name"
                     value={newSubject.name}
@@ -146,7 +187,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
               </div>
 
               <div>
-                <Label htmlFor="schedule">Horário</Label>
+                <Label htmlFor="schedule">Horário *</Label>
                 <TimeSlotSelector
                   value={newSubject.schedule}
                   onChange={(schedule) => setNewSubject({...newSubject, schedule})}
@@ -248,7 +289,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                     <div className="flex-1 space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <Label htmlFor="edit-code">Código</Label>
+                          <Label htmlFor="edit-code">Código *</Label>
                           <Input
                             id="edit-code"
                             value={editingSubject.code}
@@ -257,7 +298,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                           />
                         </div>
                         <div>
-                          <Label htmlFor="edit-name">Nome</Label>
+                          <Label htmlFor="edit-name">Nome *</Label>
                           <Input
                             id="edit-name"
                             value={editingSubject.name}
@@ -287,7 +328,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="edit-schedule">Horário</Label>
+                        <Label htmlFor="edit-schedule">Horário *</Label>
                         <TimeSlotSelector
                           value={editingSubject.schedule}
                           onChange={(schedule) => setEditingSubject({...editingSubject, schedule})}
