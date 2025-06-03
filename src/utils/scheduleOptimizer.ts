@@ -1,3 +1,4 @@
+
 import { Subject, TimeSlot, ScheduleConfiguration, OptimizedSchedule } from '@/types/schedule';
 
 export class ScheduleOptimizer {
@@ -28,10 +29,8 @@ export class ScheduleOptimizer {
     // Agrupar matérias por código
     const subjectGroups = this.groupSubjectsByCode(processedSubjects);
     
-    // Aplicar otimização respeitando disponibilidade
-    const optimizedSubjects = isMaximizationMode 
-      ? this.maximizeSubjectsOnly(subjectGroups)
-      : this.optimizeWithAvailability(subjectGroups);
+    // Aplicar otimização respeitando obrigatórias primeiro
+    const optimizedSubjects = this.optimizeWithRequiredFirst(subjectGroups);
 
     const conflicts = this.detectConflicts(optimizedSubjects);
     
@@ -42,104 +41,124 @@ export class ScheduleOptimizer {
     };
   }
 
-  private isMaximizationMode(): boolean {
-    const threshold = 0.1;
-    return this.configuration.weightVacancies <= threshold &&
-           this.configuration.weightFriend <= threshold &&
-           this.configuration.weightDifficulty <= threshold;
-  }
-
-  private maximizeSubjectsOnly(subjectGroups: { [key: string]: Subject[] }): Subject[] {
-    console.log('Executando modo maximização pura');
+  private optimizeWithRequiredFirst(subjectGroups: { [key: string]: Subject[] }): Subject[] {
     const unavailableSlots = this.configuration.unavailableSlots || [];
-    
-    // Filtrar matérias que não conflitam com horários indisponíveis
-    const validSubjects: { [key: string]: Subject[] } = {};
-    
+    console.log('Horários indisponíveis:', unavailableSlots);
+
+    // Separar matérias obrigatórias e eletivas
+    const requiredGroups: { [key: string]: Subject[] } = {};
+    const electiveGroups: { [key: string]: Subject[] } = {};
+
     for (const [code, subjects] of Object.entries(subjectGroups)) {
-      validSubjects[code] = subjects.filter(subject => 
-        !this.hasConflictWithUnavailableSlots(subject, unavailableSlots)
-      );
+      // Uma matéria é obrigatória se pelo menos uma de suas turmas for obrigatória
+      const hasRequiredClass = subjects.some(subject => subject.required);
+      
+      if (hasRequiredClass) {
+        // Filtrar apenas as turmas que não conflitam com horários indisponíveis
+        requiredGroups[code] = subjects.filter(subject => 
+          !this.hasConflictWithUnavailableSlots(subject, unavailableSlots)
+        );
+      } else {
+        electiveGroups[code] = subjects.filter(subject => 
+          !this.hasConflictWithUnavailableSlots(subject, unavailableSlots)
+        );
+      }
     }
 
-    // Tentar todas as combinações possíveis para encontrar a melhor
-    return this.findMaximumSubjects(validSubjects);
+    console.log('Matérias obrigatórias:', Object.keys(requiredGroups).length);
+    console.log('Matérias eletivas:', Object.keys(electiveGroups).length);
+
+    // Primeiro, tentar encaixar todas as matérias obrigatórias
+    const selectedSubjects = this.selectRequiredSubjects(requiredGroups);
+    console.log('Matérias obrigatórias selecionadas:', selectedSubjects.length);
+
+    // Depois, preencher com eletivas no espaço restante
+    const usedTimeSlots = new Set<string>();
+    selectedSubjects.forEach(subject => {
+      this.addTimeSlots(subject, usedTimeSlots);
+    });
+
+    const additionalElectives = this.selectElectiveSubjects(electiveGroups, usedTimeSlots);
+    console.log('Matérias eletivas adicionais:', additionalElectives.length);
+
+    return [...selectedSubjects, ...additionalElectives];
   }
 
-  private findMaximumSubjects(subjectGroups: { [key: string]: Subject[] }): Subject[] {
-    const subjectCodes = Object.keys(subjectGroups);
+  private selectRequiredSubjects(requiredGroups: { [key: string]: Subject[] }): Subject[] {
+    const requiredCodes = Object.keys(requiredGroups);
+    
+    // Tentar todas as combinações possíveis de turmas obrigatórias
     let bestCombination: Subject[] = [];
     let maxSubjects = 0;
 
-    // Gerar todas as combinações possíveis de turmas
-    const generateCombinations = (codeIndex: number, currentCombination: Subject[]): void => {
-      if (codeIndex === subjectCodes.length) {
+    const generateRequiredCombinations = (codeIndex: number, currentCombination: Subject[]): void => {
+      if (codeIndex === requiredCodes.length) {
         // Verificar se a combinação atual é válida (sem conflitos)
         if (this.isValidCombination(currentCombination)) {
           if (currentCombination.length > maxSubjects) {
             maxSubjects = currentCombination.length;
             bestCombination = [...currentCombination];
-            console.log('Nova melhor combinação encontrada:', maxSubjects, 'matérias');
+            console.log('Nova melhor combinação de obrigatórias:', maxSubjects, 'matérias');
           }
         }
         return;
       }
 
-      const currentCode = subjectCodes[codeIndex];
-      const subjects = subjectGroups[currentCode];
+      const currentCode = requiredCodes[codeIndex];
+      const subjects = requiredGroups[currentCode];
 
-      // Tentar sem nenhuma turma desta matéria
-      generateCombinations(codeIndex + 1, currentCombination);
+      // Ordenar turmas por prioridade
+      subjects.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-      // Tentar com cada turma desta matéria
+      // Tentar com cada turma desta matéria obrigatória
       for (const subject of subjects) {
-        generateCombinations(codeIndex + 1, [...currentCombination, subject]);
+        generateRequiredCombinations(codeIndex + 1, [...currentCombination, subject]);
       }
+
+      // Se não conseguir encaixar nenhuma turma desta matéria obrigatória,
+      // continuar sem ela (isso pode acontecer se houver conflitos irreconciliáveis)
+      generateRequiredCombinations(codeIndex + 1, currentCombination);
     };
 
-    generateCombinations(0, []);
+    generateRequiredCombinations(0, []);
     
-    console.log('Combinação final encontrada:', bestCombination.length, 'matérias');
+    console.log('Combinação final de obrigatórias:', bestCombination.length, 'de', requiredCodes.length, 'matérias');
     return bestCombination;
   }
 
-  private isValidCombination(subjects: Subject[]): boolean {
-    const usedTimeSlots = new Set<string>();
+  private selectElectiveSubjects(electiveGroups: { [key: string]: Subject[] }, usedTimeSlots: Set<string>): Subject[] {
+    const selected: Subject[] = [];
 
-    for (const subject of subjects) {
-      const timeSlots = this.parseSchedule(subject.schedule);
+    // Ordenar grupos eletivos por prioridade máxima
+    const sortedCodes = Object.keys(electiveGroups).sort((a, b) => {
+      const maxPriorityA = Math.max(...electiveGroups[a].map(s => s.priority || 0));
+      const maxPriorityB = Math.max(...electiveGroups[b].map(s => s.priority || 0));
+      return maxPriorityB - maxPriorityA;
+    });
+
+    for (const code of sortedCodes) {
+      const subjects = electiveGroups[code];
       
-      for (const slot of timeSlots) {
-        for (let hour = slot.startTime; hour < slot.endTime; hour += 2) {
-          const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
-          
-          if (usedTimeSlots.has(slotKey)) {
-            return false; // Conflito encontrado
-          }
-          usedTimeSlots.add(slotKey);
+      // Ordenar turmas por prioridade
+      subjects.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+      
+      for (const subject of subjects) {
+        if (!this.hasTimeConflict(subject, usedTimeSlots)) {
+          selected.push(subject);
+          this.addTimeSlots(subject, usedTimeSlots);
+          break; // Apenas uma turma por matéria
         }
       }
     }
 
-    return true; // Nenhum conflito
+    return selected;
   }
 
-  private optimizeWithAvailability(subjectGroups: { [key: string]: Subject[] }): Subject[] {
-    const unavailableSlots = this.configuration.unavailableSlots || [];
-    console.log('Horários indisponíveis:', unavailableSlots);
-
-    // Filtrar matérias que não conflitam com horários indisponíveis
-    const validSubjects: { [key: string]: Subject[] } = {};
-    
-    for (const [code, subjects] of Object.entries(subjectGroups)) {
-      validSubjects[code] = subjects.filter(subject => 
-        !this.hasConflictWithUnavailableSlots(subject, unavailableSlots)
-      );
-    }
-
-    console.log('Matérias válidas após filtrar indisponibilidade:', Object.keys(validSubjects).length);
-
-    return this.maximizeSubjects(validSubjects);
+  private isMaximizationMode(): boolean {
+    const threshold = 0.1;
+    return this.configuration.weightVacancies <= threshold &&
+           this.configuration.weightFriend <= threshold &&
+           this.configuration.weightDifficulty <= threshold;
   }
 
   private hasConflictWithUnavailableSlots(subject: Subject, unavailableSlots: string[]): boolean {
@@ -229,70 +248,25 @@ export class ScheduleOptimizer {
     return groups;
   }
 
-  private maximizeSubjects(subjectGroups: { [key: string]: Subject[] }): Subject[] {
-    const selected: Subject[] = [];
+  private isValidCombination(subjects: Subject[]): boolean {
     const usedTimeSlots = new Set<string>();
 
-    // Ordenar grupos por prioridade máxima
-    const sortedCodes = Object.keys(subjectGroups).sort((a, b) => {
-      const maxPriorityA = Math.max(...subjectGroups[a].map(s => s.priority || 0));
-      const maxPriorityB = Math.max(...subjectGroups[b].map(s => s.priority || 0));
-      return maxPriorityB - maxPriorityA;
-    });
-
-    for (const code of sortedCodes) {
-      const subjects = subjectGroups[code];
+    for (const subject of subjects) {
+      const timeSlots = this.parseSchedule(subject.schedule);
       
-      // Ordenar turmas por prioridade
-      subjects.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-      
-      for (const subject of subjects) {
-        if (!this.hasTimeConflict(subject, usedTimeSlots)) {
-          selected.push(subject);
-          this.addTimeSlots(subject, usedTimeSlots);
-          break; // Apenas uma turma por matéria
+      for (const slot of timeSlots) {
+        for (let hour = slot.startTime; hour < slot.endTime; hour += 2) {
+          const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
+          
+          if (usedTimeSlots.has(slotKey)) {
+            return false; // Conflito encontrado
+          }
+          usedTimeSlots.add(slotKey);
         }
       }
     }
 
-    return selected;
-  }
-
-  private optimizeHalfPeriod(subjectGroups: { [key: string]: Subject[] }): Subject[] {
-    const selected: Subject[] = [];
-    const dayPeriods: { [key: string]: 'morning' | 'afternoon' | null } = {};
-
-    // Para cada dia, determinar se será manhã ou tarde
-    const days = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-    
-    for (const day of days) {
-      dayPeriods[day] = null;
-    }
-
-    const usedTimeSlots = new Set<string>();
-
-    // Ordenar grupos por prioridade
-    const sortedCodes = Object.keys(subjectGroups).sort((a, b) => {
-      const maxPriorityA = Math.max(...subjectGroups[a].map(s => s.priority || 0));
-      const maxPriorityB = Math.max(...subjectGroups[b].map(s => s.priority || 0));
-      return maxPriorityB - maxPriorityA;
-    });
-
-    for (const code of sortedCodes) {
-      const subjects = subjectGroups[code];
-      subjects.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-      
-      for (const subject of subjects) {
-        if (this.canScheduleHalfPeriod(subject, dayPeriods, usedTimeSlots)) {
-          selected.push(subject);
-          this.updateDayPeriods(subject, dayPeriods);
-          this.addTimeSlots(subject, usedTimeSlots);
-          break;
-        }
-      }
-    }
-
-    return selected;
+    return true; // Nenhum conflito
   }
 
   private hasTimeConflict(subject: Subject, usedTimeSlots: Set<string>): boolean {
@@ -318,38 +292,6 @@ export class ScheduleOptimizer {
         const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
         usedTimeSlots.add(slotKey);
       }
-    }
-  }
-
-  private canScheduleHalfPeriod(
-    subject: Subject, 
-    dayPeriods: { [key: string]: 'morning' | 'afternoon' | null },
-    usedTimeSlots: Set<string>
-  ): boolean {
-    if (this.hasTimeConflict(subject, usedTimeSlots)) {
-      return false;
-    }
-
-    const timeSlots = this.parseSchedule(subject.schedule);
-    
-    for (const slot of timeSlots) {
-      const period = slot.startTime < 14 ? 'morning' : 'afternoon';
-      const currentPeriod = dayPeriods[slot.day];
-      
-      if (currentPeriod && currentPeriod !== period) {
-        return false; // Conflito de período
-      }
-    }
-    
-    return true;
-  }
-
-  private updateDayPeriods(subject: Subject, dayPeriods: { [key: string]: 'morning' | 'afternoon' | null }): void {
-    const timeSlots = this.parseSchedule(subject.schedule);
-    
-    for (const slot of timeSlots) {
-      const period = slot.startTime < 14 ? 'morning' : 'afternoon';
-      dayPeriods[slot.day] = period;
     }
   }
 
