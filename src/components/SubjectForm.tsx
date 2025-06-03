@@ -31,7 +31,8 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
     difficulty: 3,
     hasFriend: false,
     schedule: '',
-    hours: 2
+    hours: 2,
+    grade: undefined // Nova propriedade para nota
   });
 
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
@@ -74,7 +75,8 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
       difficulty: 3,
       hasFriend: false,
       schedule: '',
-      hours: 2
+      hours: 2,
+      grade: undefined // Reset nota
     });
     
     toast({
@@ -194,12 +196,38 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                   />
                 </div>
                 <div>
+                  <Label htmlFor="grade">Nota Esperada</Label>
+                  <Input
+                    id="grade"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={newSubject.grade || ''}
+                    onChange={(e) => setNewSubject({...newSubject, grade: e.target.value ? parseFloat(e.target.value) : undefined})}
+                    placeholder="Ex: 8.5"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <Label htmlFor="professor">Professor</Label>
                   <Input
                     id="professor"
                     value={newSubject.professor}
                     onChange={(e) => setNewSubject({...newSubject, professor: e.target.value})}
                     placeholder="Nome do professor"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="hours">Carga Horária</Label>
+                  <Input
+                    id="hours"
+                    type="number"
+                    value={newSubject.hours}
+                    onChange={(e) => setNewSubject({...newSubject, hours: parseInt(e.target.value) || 2})}
+                    placeholder="Ex: 2"
                   />
                 </div>
               </div>

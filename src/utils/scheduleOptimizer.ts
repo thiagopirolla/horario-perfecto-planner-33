@@ -128,7 +128,22 @@ export class ScheduleOptimizer {
       // Score baseado na dificuldade (menor dificuldade = melhor)
       subjectScore += this.configuration.weightDifficulty * (5 - subject.difficulty);
 
+      // Score baseado na nota da matéria (maior nota = melhor)
+      if (subject.grade !== undefined && subject.grade !== null) {
+        subjectScore += this.configuration.weightGrade * subject.grade;
+      }
+
       totalScore += subjectScore;
+    }
+
+    // Bonus adicional para média de notas alta quando o peso é significativo
+    if (this.configuration.weightGrade > 0 && combination.length > 0) {
+      const subjectsWithGrades = combination.filter(s => s.grade !== undefined && s.grade !== null);
+      if (subjectsWithGrades.length > 0) {
+        const averageGrade = subjectsWithGrades.reduce((sum, s) => sum + (s.grade || 0), 0) / subjectsWithGrades.length;
+        // Bonus baseado na média geral da combinação
+        totalScore += this.configuration.weightGrade * averageGrade * combination.length * 0.1;
+      }
     }
 
     return totalScore;
