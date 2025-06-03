@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Plus, Save, Trash2, TableIcon } from 'lucide-react';
+import { Plus, Save, Trash2, TableIcon, Copy } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Subject } from '@/types/schedule';
 import { toast } from '@/hooks/use-toast';
@@ -97,6 +98,20 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
   const removeRow = (id: string) => {
     if (tableRows.length > 1) {
       setTableRows(tableRows.filter(row => row.id !== id));
+    }
+  };
+
+  const duplicateRow = (id: string) => {
+    const rowToDuplicate = tableRows.find(row => row.id === id);
+    if (rowToDuplicate) {
+      const newRow: TableRow = {
+        ...rowToDuplicate,
+        id: Date.now().toString() + Math.random().toString()
+      };
+      const rowIndex = tableRows.findIndex(row => row.id === id);
+      const newRows = [...tableRows];
+      newRows.splice(rowIndex + 1, 0, newRow);
+      setTableRows(newRows);
     }
   };
 
@@ -290,14 +305,25 @@ const SubjectTable: React.FC<SubjectTableProps> = ({ subjects, onSubjectsChange 
                     />
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeRow(row.id)}
-                      disabled={tableRows.length === 1}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => duplicateRow(row.id)}
+                        title="Duplicar linha"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeRow(row.id)}
+                        disabled={tableRows.length === 1}
+                        title="Remover linha"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
