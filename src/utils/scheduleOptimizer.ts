@@ -1,4 +1,3 @@
-
 import { Subject, TimeSlot, ScheduleConfiguration, OptimizedSchedule } from '@/types/schedule';
 
 export class ScheduleOptimizer {
@@ -125,25 +124,17 @@ export class ScheduleOptimizer {
         subjectScore += this.configuration.weightFriend;
       }
 
-      // Score baseado na dificuldade (menor dificuldade = melhor)
+      // Score baseado na dificuldade individual (menor dificuldade = melhor)
       subjectScore += this.configuration.weightDifficulty * (5 - subject.difficulty);
-
-      // Score baseado na nota da matéria (maior nota = melhor)
-      if (subject.grade !== undefined && subject.grade !== null) {
-        subjectScore += this.configuration.weightGrade * subject.grade;
-      }
 
       totalScore += subjectScore;
     }
 
-    // Bonus adicional para média de notas alta quando o peso é significativo
-    if (this.configuration.weightGrade > 0 && combination.length > 0) {
-      const subjectsWithGrades = combination.filter(s => s.grade !== undefined && s.grade !== null);
-      if (subjectsWithGrades.length > 0) {
-        const averageGrade = subjectsWithGrades.reduce((sum, s) => sum + (s.grade || 0), 0) / subjectsWithGrades.length;
-        // Bonus baseado na média geral da combinação
-        totalScore += this.configuration.weightGrade * averageGrade * combination.length * 0.1;
-      }
+    // Bonus adicional para média de dificuldade baixa quando o peso é significativo
+    if (this.configuration.weightDifficulty > 0 && combination.length > 0) {
+      const averageDifficulty = combination.reduce((sum, s) => sum + s.difficulty, 0) / combination.length;
+      // Bonus baseado na média geral de dificuldade da combinação (menor = melhor)
+      totalScore += this.configuration.weightDifficulty * (5 - averageDifficulty) * combination.length * 0.1;
     }
 
     return totalScore;
@@ -224,6 +215,7 @@ export class ScheduleOptimizer {
     for (const slot of timeSlots) {
       for (let hour = slot.startTime; hour < slot.endTime; hour += 2) {
         const slotKey = `${this.getDayAbbreviation(slot.day)}.${hour.toString().padStart(2, '0')}-${(hour + 2).toString().padStart(2, '0')}`;
+        
         if (usedTimeSlots.has(slotKey)) {
           return true;
         }

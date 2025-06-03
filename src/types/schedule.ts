@@ -1,3 +1,4 @@
+
 export interface Subject {
   id: string;
   code: string;
@@ -12,7 +13,6 @@ export interface Subject {
   schedule: string;
   hours: number;
   priority?: number;
-  grade?: number; // Nova propriedade para a nota da matéria
 }
 
 export interface TimeSlot {
@@ -25,7 +25,6 @@ export interface ScheduleConfiguration {
   weightVacancies: number;
   weightFriend: number;
   weightDifficulty: number;
-  weightGrade: number; // Novo peso para média de notas
   unavailableSlots?: string[];
 }
 

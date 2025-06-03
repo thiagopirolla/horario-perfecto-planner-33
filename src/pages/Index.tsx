@@ -18,7 +18,6 @@ const Index = () => {
     weightVacancies: 1.0,
     weightFriend: 5.0,
     weightDifficulty: 3.0,
-    weightGrade: 2.0, // Novo peso para média de notas
     unavailableSlots: []
   });
   const [optimizedSchedule, setOptimizedSchedule] = useState<OptimizedSchedule | null>(null);

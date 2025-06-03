@@ -77,17 +77,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
             weightDifficulty: value[0]
           })} min={0} max={10} step={0.1} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-1">
-              Prioriza professores com menor dificuldade
-            </p>
-          </div>
-
-          <div>
-            <Label>Peso da Média de Notas: {configuration.weightGrade.toFixed(1)}</Label>
-            <Slider value={[configuration.weightGrade]} onValueChange={value => updateConfig({
-            weightGrade: value[0]
-          })} min={0} max={10} step={0.1} className="mt-2" />
-            <p className="text-xs text-muted-foreground mt-1">
-              Prioriza matérias com notas mais altas para maximizar a média
+              Prioriza professores com menor dificuldade e maximiza a média das notas de dificuldade
             </p>
           </div>
         </CardContent>
