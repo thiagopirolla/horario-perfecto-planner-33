@@ -81,131 +81,146 @@ export class ScheduleOptimizer {
   private selectElectivesByWeights(electiveGroups: { [key: string]: Subject[] }, usedTimeSlots: Set<string>): Subject[] {
     const selected: Subject[] = [];
     
-    // Identificar critérios com pesos altos (>= 7.0)
-    const highWeightCriteria = this.getHighWeightCriteria();
-    console.log('Critérios com peso alto:', highWeightCriteria);
+    // Fase 1: Seleção Prioritária (Critérios com Peso > 0)
+    const activeCriteria = this.getActiveCriteria();
+    console.log('Critérios ativos (peso > 0):', activeCriteria);
 
-    if (highWeightCriteria.length > 0) {
-      // Primeira passada: tentar maximizar critérios com pesos altos
-      const prioritizedSubjects = this.selectByHighWeightCriteria(electiveGroups, usedTimeSlots, highWeightCriteria);
+    if (activeCriteria.length > 0) {
+      const prioritizedSubjects = this.selectByActiveCriteria(electiveGroups, usedTimeSlots, activeCriteria);
       selected.push(...prioritizedSubjects);
       
       // Atualizar horários ocupados
       prioritizedSubjects.forEach(subject => {
         this.addTimeSlots(subject, usedTimeSlots);
       });
+      
+      console.log(`Fase 1 completada: ${prioritizedSubjects.length} matérias selecionadas por critérios ativos`);
     }
 
-    // Segunda passada: preencher horários restantes com qualquer matéria disponível
-    const remainingSubjects = this.selectRemainingSubjects(electiveGroups, usedTimeSlots, selected);
+    // Fase 2: Preenchimento dos Horários Restantes
+    const remainingSubjects = this.fillRemainingSlots(electiveGroups, usedTimeSlots, selected);
     selected.push(...remainingSubjects);
+    
+    console.log(`Fase 2 completada: ${remainingSubjects.length} matérias adicionais selecionadas`);
 
     return selected;
   }
 
-  private getHighWeightCriteria(): string[] {
+  private getActiveCriteria(): string[] {
     const criteria: string[] = [];
-    const threshold = 7.0;
 
-    if (this.configuration.weightFriend >= threshold) {
+    if (this.configuration.weightFriend > 0) {
       criteria.push('friend');
     }
-    if (this.configuration.weightVacancies >= threshold) {
+    if (this.configuration.weightVacancies > 0) {
       criteria.push('vacancies');
     }
-    if (this.configuration.weightDifficulty >= threshold) {
+    if (this.configuration.weightDifficulty > 0) {
       criteria.push('difficulty');
     }
 
     return criteria;
   }
 
-  private selectByHighWeightCriteria(
+  private selectByActiveCriteria(
     electiveGroups: { [key: string]: Subject[] }, 
     usedTimeSlots: Set<string>,
-    criteria: string[]
+    activeCriteria: string[]
   ): Subject[] {
     const selected: Subject[] = [];
     
-    // Criar lista de códigos ordenados por quão bem atendem aos critérios de peso alto
-    const sortedCodes = Object.keys(electiveGroups).sort((a, b) => {
-      const scoreA = this.calculateHighWeightScore(electiveGroups[a], criteria);
-      const scoreB = this.calculateHighWeightScore(electiveGroups[b], criteria);
-      return scoreB - scoreA;
-    });
-
-    for (const code of sortedCodes) {
-      if (selected.some(s => s.code === code)) continue; // Já selecionada
-
-      const subjects = electiveGroups[code];
-      
-      // Ordenar turmas da matéria por prioridade geral
-      subjects.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-      
+    // Avaliar todas as matérias disponíveis
+    const availableSubjects: { subject: Subject; code: string; criteriaMet: number; score: number }[] = [];
+    
+    for (const [code, subjects] of Object.entries(electiveGroups)) {
       for (const subject of subjects) {
         if (!this.hasTimeConflict(subject, usedTimeSlots)) {
-          // Verificar se a turma atende aos critérios de peso alto
-          if (this.meetsHighWeightCriteria(subject, criteria)) {
-            selected.push(subject);
-            this.addTimeSlots(subject, usedTimeSlots);
-            console.log(`Selecionada por critério de peso alto: ${subject.name} (${subject.class})`);
-            break;
+          const evaluation = this.evaluateSubjectCriteria(subject, activeCriteria);
+          if (evaluation.criteriaMet > 0) { // Só considera se atende pelo menos um critério
+            availableSubjects.push({
+              subject,
+              code,
+              criteriaMet: evaluation.criteriaMet,
+              score: evaluation.score
+            });
           }
         }
+      }
+    }
+    
+    // Ordenar por: 1) Número de critérios atendidos, 2) Score total
+    availableSubjects.sort((a, b) => {
+      if (b.criteriaMet !== a.criteriaMet) {
+        return b.criteriaMet - a.criteriaMet;
+      }
+      return b.score - a.score;
+    });
+    
+    console.log(`Matérias candidatas na Fase 1: ${availableSubjects.length}`);
+    
+    // Seleção gulosa: pegar a melhor matéria disponível de cada código
+    const selectedCodes = new Set<string>();
+    
+    for (const candidate of availableSubjects) {
+      if (!selectedCodes.has(candidate.code) && !this.hasTimeConflict(candidate.subject, usedTimeSlots)) {
+        selected.push(candidate.subject);
+        selectedCodes.add(candidate.code);
+        this.addTimeSlots(candidate.subject, usedTimeSlots);
+        
+        console.log(`Selecionada (Fase 1): ${candidate.subject.name} - Critérios: ${candidate.criteriaMet}/${activeCriteria.length}, Score: ${candidate.score.toFixed(2)}`);
       }
     }
 
     return selected;
   }
 
-  private calculateHighWeightScore(subjects: Subject[], criteria: string[]): number {
-    let bestScore = 0;
+  private evaluateSubjectCriteria(subject: Subject, activeCriteria: string[]): { criteriaMet: number; score: number } {
+    let criteriaMet = 0;
+    let score = 0;
     
-    for (const subject of subjects) {
-      let score = 0;
+    for (const criterion of activeCriteria) {
+      let criterionMet = false;
+      let criterionScore = 0;
       
-      if (criteria.includes('friend') && subject.hasFriend) {
-        score += this.configuration.weightFriend;
-      }
-      
-      if (criteria.includes('vacancies')) {
-        const availableSpots = subject.capacity - subject.filledSpots;
-        if (availableSpots > 0) {
-          score += this.configuration.weightVacancies * availableSpots;
-        }
-      }
-      
-      if (criteria.includes('difficulty')) {
-        // Dificuldade alta = nota baixa do professor (mais difícil)
-        score += this.configuration.weightDifficulty * (6 - subject.difficulty);
-      }
-      
-      bestScore = Math.max(bestScore, score);
-    }
-    
-    return bestScore;
-  }
-
-  private meetsHighWeightCriteria(subject: Subject, criteria: string[]): boolean {
-    for (const criterion of criteria) {
       switch (criterion) {
         case 'friend':
-          if (!subject.hasFriend) return false;
+          if (subject.hasFriend) {
+            criteriaMet++;
+            criterionMet = true;
+            criterionScore = this.configuration.weightFriend;
+          }
           break;
+          
         case 'vacancies':
           const availableSpots = subject.capacity - subject.filledSpots;
-          if (availableSpots <= 0) return false;
+          if (availableSpots > 0) {
+            criteriaMet++;
+            criterionMet = true;
+            // Score proporcional às vagas disponíveis e peso do critério
+            criterionScore = this.configuration.weightVacancies * availableSpots;
+          }
           break;
+          
         case 'difficulty':
-          // Para peso alto de dificuldade, queremos professores difíceis (nota baixa)
-          if (subject.difficulty >= 4) return false; // Notas 4 e 5 são consideradas "fáceis"
+          // Para dificuldade, menor nota = mais difícil = melhor se queremos dificuldade
+          if (subject.difficulty <= 3) { // Consideramos 1-3 como "difícil"
+            criteriaMet++;
+            criterionMet = true;
+            // Score maior para professores mais difíceis
+            criterionScore = this.configuration.weightDifficulty * (4 - subject.difficulty);
+          }
           break;
       }
+      
+      if (criterionMet) {
+        score += criterionScore;
+      }
     }
-    return true;
+    
+    return { criteriaMet, score };
   }
 
-  private selectRemainingSubjects(
+  private fillRemainingSlots(
     electiveGroups: { [key: string]: Subject[] }, 
     usedTimeSlots: Set<string>,
     alreadySelected: Subject[]
@@ -213,28 +228,34 @@ export class ScheduleOptimizer {
     const selected: Subject[] = [];
     const selectedCodes = new Set(alreadySelected.map(s => s.code));
 
-    // Ordenar códigos por prioridade geral das melhores turmas
-    const sortedCodes = Object.keys(electiveGroups)
-      .filter(code => !selectedCodes.has(code))
-      .sort((a, b) => {
-        const maxPriorityA = Math.max(...electiveGroups[a].map(s => s.priority || 0));
-        const maxPriorityB = Math.max(...electiveGroups[b].map(s => s.priority || 0));
-        return maxPriorityB - maxPriorityA;
-      });
-
-    for (const code of sortedCodes) {
-      const subjects = electiveGroups[code];
-      
-      // Ordenar turmas por prioridade
-      subjects.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-      
-      for (const subject of subjects) {
-        if (!this.hasTimeConflict(subject, usedTimeSlots)) {
-          selected.push(subject);
-          this.addTimeSlots(subject, usedTimeSlots);
-          console.log(`Preenchimento restante: ${subject.name} (${subject.class})`);
-          break;
+    // Criar lista de todas as matérias restantes disponíveis
+    const availableSubjects: { subject: Subject; code: string }[] = [];
+    
+    for (const [code, subjects] of Object.entries(electiveGroups)) {
+      if (!selectedCodes.has(code)) {
+        for (const subject of subjects) {
+          if (!this.hasTimeConflict(subject, usedTimeSlots)) {
+            availableSubjects.push({ subject, code });
+          }
         }
+      }
+    }
+    
+    // Ordenar apenas por prioridade geral (calculada anteriormente)
+    availableSubjects.sort((a, b) => (b.subject.priority || 0) - (a.subject.priority || 0));
+    
+    console.log(`Matérias candidatas na Fase 2: ${availableSubjects.length}`);
+    
+    // Seleção gulosa simples: primeira matéria disponível de cada código
+    const processedCodes = new Set<string>();
+    
+    for (const candidate of availableSubjects) {
+      if (!processedCodes.has(candidate.code) && !this.hasTimeConflict(candidate.subject, usedTimeSlots)) {
+        selected.push(candidate.subject);
+        processedCodes.add(candidate.code);
+        this.addTimeSlots(candidate.subject, usedTimeSlots);
+        
+        console.log(`Selecionada (Fase 2): ${candidate.subject.name} - Prioridade: ${(candidate.subject.priority || 0).toFixed(2)}`);
       }
     }
 
