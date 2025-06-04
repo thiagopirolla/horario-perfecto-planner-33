@@ -1,3 +1,4 @@
+
 import { Subject, TimeSlot, ScheduleConfiguration, OptimizedSchedule } from '@/types/schedule';
 
 export class ScheduleOptimizer {
@@ -124,17 +125,21 @@ export class ScheduleOptimizer {
         subjectScore += this.configuration.weightFriend;
       }
 
-      // Score baseado na dificuldade individual (menor dificuldade = melhor)
-      subjectScore += this.configuration.weightDifficulty * (5 - subject.difficulty);
+      // Score baseado na dificuldade individual (CORRIGIDO: maior dificuldade = melhor quando peso é alto)
+      subjectScore += this.configuration.weightDifficulty * subject.difficulty;
 
       totalScore += subjectScore;
     }
 
-    // Bonus adicional para média de dificuldade baixa quando o peso é significativo
+    // Bonus adicional para média de dificuldade alta quando o peso é significativo
     if (this.configuration.weightDifficulty > 0 && combination.length > 0) {
       const averageDifficulty = combination.reduce((sum, s) => sum + s.difficulty, 0) / combination.length;
-      // Bonus baseado na média geral de dificuldade da combinação (menor = melhor)
-      totalScore += this.configuration.weightDifficulty * (5 - averageDifficulty) * combination.length * 0.1;
+      // CORRIGIDO: Bonus baseado na média geral de dificuldade da combinação (maior = melhor)
+      const difficultyBonus = this.configuration.weightDifficulty * averageDifficulty * combination.length * 0.1;
+      totalScore += difficultyBonus;
+      
+      // Log para debug
+      console.log(`Combinação: ${combination.length} matérias, Média dificuldade: ${averageDifficulty.toFixed(2)}, Bonus: ${difficultyBonus.toFixed(2)}`);
     }
 
     return totalScore;
