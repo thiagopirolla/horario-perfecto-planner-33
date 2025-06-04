@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -5,10 +6,12 @@ import { Slider } from '@/components/ui/slider';
 import { Settings, XCircle } from 'lucide-react';
 import { ScheduleConfiguration } from '@/types/schedule';
 import TimeSlotSelector from './TimeSlotSelector';
+
 interface ConfigurationPanelProps {
   configuration: ScheduleConfiguration;
   onConfigurationChange: (config: ScheduleConfiguration) => void;
 }
+
 const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   configuration,
   onConfigurationChange
@@ -19,6 +22,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
       ...updates
     });
   };
+
   return <div className="space-y-6">
       <Card className="animate-fade-in">
         <CardHeader>
@@ -59,7 +63,7 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
             <Label>Peso das Vagas Disponíveis: {configuration.weightVacancies.toFixed(1)}</Label>
             <Slider value={[configuration.weightVacancies]} onValueChange={value => updateConfig({
             weightVacancies: value[0]
-          })} min={0} max={10} step={0.1} className="mt-2" />
+          })} min={0} max={10} step={0.1} className="mt-2 max-w-md" />
             <p className="text-xs text-muted-foreground mt-1">Prioriza turmas com mais vagas disponíveis</p>
           </div>
 
@@ -67,21 +71,22 @@ const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
             <Label>Peso dos Amigos: {configuration.weightFriend.toFixed(1)}</Label>
             <Slider value={[configuration.weightFriend]} onValueChange={value => updateConfig({
             weightFriend: value[0]
-          })} min={0} max={10} step={0.1} className="mt-2" />
+          })} min={0} max={10} step={0.1} className="mt-2 max-w-md" />
             <p className="text-xs text-muted-foreground mt-1">Prioriza turmas onde você tem amigos</p>
           </div>
 
           <div>
-            <Label>Peso da Dificuldade: {configuration.weightDifficulty.toFixed(1)}</Label>
+            <Label>Peso da Facilidade: {configuration.weightDifficulty.toFixed(1)}</Label>
             <Slider value={[configuration.weightDifficulty]} onValueChange={value => updateConfig({
             weightDifficulty: value[0]
-          })} min={0} max={10} step={0.1} className="mt-2" />
+          })} min={0} max={10} step={0.1} className="mt-2 max-w-md" />
             <p className="text-xs text-muted-foreground mt-1">
-              Prioriza professores com menor dificuldade e maximiza a média das notas de dificuldade
+              Prioriza professores com maior facilidade e maximiza a média das notas de facilidade
             </p>
           </div>
         </CardContent>
       </Card>
     </div>;
 };
+
 export default ConfigurationPanel;

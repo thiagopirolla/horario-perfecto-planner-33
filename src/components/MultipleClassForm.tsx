@@ -267,14 +267,14 @@ const MultipleClassForm: React.FC<MultipleClassFormProps> = ({ subjects, onSubje
                 </div>
 
                 <div className="mb-4">
-                  <Label>Dificuldade do Professor: {classData.difficulty}</Label>
+                  <Label>Facilidade do Professor: {classData.difficulty}</Label>
                   <Slider
                     value={[classData.difficulty]}
                     onValueChange={(value) => updateClass(classData.id, 'difficulty', value[0])}
                     min={1}
                     max={5}
                     step={1}
-                    className="mt-2"
+                    className="mt-2 max-w-md"
                   />
                 </div>
 
