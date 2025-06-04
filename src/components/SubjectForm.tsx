@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,8 +32,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
     difficulty: 3,
     hasFriend: false,
     schedule: '',
-    hours: 2,
-    grade: undefined // Nova propriedade para nota
+    hours: 2
   });
 
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
@@ -75,8 +75,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
       difficulty: 3,
       hasFriend: false,
       schedule: '',
-      hours: 2,
-      grade: undefined // Reset nota
+      hours: 2
     });
     
     toast({
@@ -140,7 +139,7 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
   return (
     <div className="space-y-6">
       <Tabs defaultValue="form" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="form" className="flex items-center gap-2">
             <FormInput className="w-4 h-4" />
             Individual
@@ -196,16 +195,13 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                   />
                 </div>
                 <div>
-                  <Label htmlFor="grade">Nota Esperada</Label>
+                  <Label htmlFor="hours">Carga Horária</Label>
                   <Input
-                    id="grade"
+                    id="hours"
                     type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value={newSubject.grade || ''}
-                    onChange={(e) => setNewSubject({...newSubject, grade: e.target.value ? parseFloat(e.target.value) : undefined})}
-                    placeholder="Ex: 8.5"
+                    value={newSubject.hours}
+                    onChange={(e) => setNewSubject({...newSubject, hours: parseInt(e.target.value) || 2})}
+                    placeholder="Ex: 2"
                   />
                 </div>
               </div>
@@ -218,16 +214,6 @@ const SubjectForm: React.FC<SubjectFormProps> = ({ subjects, onSubjectsChange })
                     value={newSubject.professor}
                     onChange={(e) => setNewSubject({...newSubject, professor: e.target.value})}
                     placeholder="Nome do professor"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="hours">Carga Horária</Label>
-                  <Input
-                    id="hours"
-                    type="number"
-                    value={newSubject.hours}
-                    onChange={(e) => setNewSubject({...newSubject, hours: parseInt(e.target.value) || 2})}
-                    placeholder="Ex: 2"
                   />
                 </div>
               </div>
