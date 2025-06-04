@@ -1,3 +1,4 @@
+
 import { Subject, TimeSlot, ScheduleConfiguration, OptimizedSchedule } from '@/types/schedule';
 
 export class ScheduleOptimizer {
@@ -23,10 +24,8 @@ export class ScheduleOptimizer {
     // Agrupar matérias por código
     const subjectGroups = this.groupSubjectsByCode(processedSubjects);
     
-    // Usar estratégia baseada no peso dos amigos
-    const bestCombination = this.shouldUseFriendsFirstStrategy() 
-      ? this.findOptimalCombinationWithFriendsFirst(subjectGroups)
-      : this.findOptimalCombination(subjectGroups);
+    // Encontrar a melhor combinação usando backtracking completo
+    const bestCombination = this.findOptimalCombination(subjectGroups);
 
     const conflicts = this.detectConflicts(bestCombination);
     
@@ -35,155 +34,6 @@ export class ScheduleOptimizer {
       totalSubjects: bestCombination.length,
       conflicts
     };
-  }
-
-  private shouldUseFriendsFirstStrategy(): boolean {
-    // Ativar estratégia de amigos primeiro quando o peso for >= 5
-    return this.configuration.weightFriend >= 5;
-  }
-
-  private findOptimalCombinationWithFriendsFirst(subjectGroups: { [key: string]: Subject[] }): Subject[] {
-    const unavailableSlots = this.configuration.unavailableSlots || [];
-    console.log('Usando estratégia de amigos primeiro - Peso:', this.configuration.weightFriend);
-
-    // Filtrar matérias que conflitam com horários indisponíveis
-    const filteredGroups: { [key: string]: Subject[] } = {};
-    for (const [code, subjects] of Object.entries(subjectGroups)) {
-      filteredGroups[code] = subjects.filter(subject => 
-        !this.hasConflictWithUnavailableSlots(subject, unavailableSlots)
-      );
-    }
-
-    // Separar matérias com amigos e sem amigos
-    const friendGroups: { [key: string]: Subject[] } = {};
-    const nonFriendGroups: { [key: string]: Subject[] } = {};
-
-    for (const [code, subjects] of Object.entries(filteredGroups)) {
-      const friendSubjects = subjects.filter(s => s.hasFriend);
-      const nonFriendSubjects = subjects.filter(s => !s.hasFriend);
-      
-      if (friendSubjects.length > 0) {
-        friendGroups[code] = friendSubjects;
-      }
-      if (nonFriendSubjects.length > 0) {
-        nonFriendGroups[code] = nonFriendSubjects;
-      }
-    }
-
-    console.log(`Matérias com amigos: ${Object.keys(friendGroups).length}`);
-    console.log(`Matérias sem amigos: ${Object.keys(nonFriendGroups).length}`);
-
-    // FASE 1: Otimizar matérias com amigos
-    const friendsCombination = this.findBestCombinationForGroups(friendGroups, 'amigos');
-    const usedSlots = new Set<string>();
-    
-    for (const subject of friendsCombination) {
-      this.addTimeSlots(subject, usedSlots);
-    }
-
-    console.log(`Fase 1 concluída: ${friendsCombination.length} matérias com amigos selecionadas`);
-
-    // FASE 2: Preencher horários restantes com outras matérias
-    // Calcular intensidade da estratégia baseada no peso (0-1)
-    const strategyIntensity = Math.min(this.configuration.weightFriend / 10, 1);
-    
-    let finalCombination = [...friendsCombination];
-    
-    if (strategyIntensity < 1) {
-      // Se não for peso máximo, permitir substituições se melhorarem significativamente o resultado
-      const alternativeCombination = this.findBestAlternativeWithMixedStrategy(
-        filteredGroups, 
-        strategyIntensity
-      );
-      
-      if (alternativeCombination.length > finalCombination.length * (1 + (1 - strategyIntensity) * 0.5)) {
-        console.log('Usando combinação alternativa por ter significativamente mais matérias');
-        finalCombination = alternativeCombination;
-      } else {
-        // Complementar com matérias sem amigos nos horários livres
-        const remainingGroups = this.filterGroupsByAvailableSlots(nonFriendGroups, usedSlots);
-        const additionalSubjects = this.findBestCombinationForGroups(remainingGroups, 'complemento');
-        finalCombination = [...friendsCombination, ...additionalSubjects];
-      }
-    } else {
-      // Peso máximo: apenas complementar com matérias sem amigos
-      const remainingGroups = this.filterGroupsByAvailableSlots(nonFriendGroups, usedSlots);
-      const additionalSubjects = this.findBestCombinationForGroups(remainingGroups, 'complemento');
-      finalCombination = [...friendsCombination, ...additionalSubjects];
-    }
-
-    console.log(`Combinação final: ${finalCombination.length} matérias (${finalCombination.filter(s => s.hasFriend).length} com amigos)`);
-    
-    return finalCombination;
-  }
-
-  private findBestAlternativeWithMixedStrategy(subjectGroups: { [key: string]: Subject[] }, strategyIntensity: number): Subject[] {
-    // Usar algoritmo original com boost para matérias com amigos
-    const originalWeightFriend = this.configuration.weightFriend;
-    this.configuration.weightFriend = originalWeightFriend * (1 + strategyIntensity);
-    
-    const result = this.findOptimalCombination(subjectGroups);
-    
-    // Restaurar peso original
-    this.configuration.weightFriend = originalWeightFriend;
-    
-    return result;
-  }
-
-  private filterGroupsByAvailableSlots(groups: { [key: string]: Subject[] }, usedSlots: Set<string>): { [key: string]: Subject[] } {
-    const filteredGroups: { [key: string]: Subject[] } = {};
-    
-    for (const [code, subjects] of Object.entries(groups)) {
-      const availableSubjects = subjects.filter(subject => !this.hasTimeConflict(subject, usedSlots));
-      if (availableSubjects.length > 0) {
-        filteredGroups[code] = availableSubjects;
-      }
-    }
-    
-    return filteredGroups;
-  }
-
-  private findBestCombinationForGroups(subjectGroups: { [key: string]: Subject[] }, phase: string): Subject[] {
-    const subjectCodes = Object.keys(subjectGroups);
-    console.log(`Otimizando ${phase}: ${subjectCodes.length} grupos de matérias`);
-
-    if (subjectCodes.length === 0) return [];
-
-    let bestCombination: Subject[] = [];
-    let bestScore = -Infinity;
-
-    const backtrack = (codeIndex: number, currentCombination: Subject[], usedSlots: Set<string>) => {
-      if (codeIndex === subjectCodes.length) {
-        const score = this.calculateCombinationScore(currentCombination);
-        
-        if (score > bestScore) {
-          bestScore = score;
-          bestCombination = [...currentCombination];
-        }
-        return;
-      }
-
-      const currentCode = subjectCodes[codeIndex];
-      const availableSubjects = subjectGroups[currentCode];
-
-      // Não selecionar nenhuma turma desta matéria
-      backtrack(codeIndex + 1, currentCombination, usedSlots);
-
-      // Tentar cada turma disponível
-      for (const subject of availableSubjects) {
-        if (!this.hasTimeConflict(subject, usedSlots)) {
-          const newUsedSlots = new Set(usedSlots);
-          this.addTimeSlots(subject, newUsedSlots);
-          
-          backtrack(codeIndex + 1, [...currentCombination, subject], newUsedSlots);
-        }
-      }
-    };
-
-    backtrack(0, [], new Set<string>());
-    
-    console.log(`${phase}: ${bestCombination.length} matérias selecionadas (score: ${bestScore.toFixed(2)})`);
-    return bestCombination;
   }
 
   private findOptimalCombination(subjectGroups: { [key: string]: Subject[] }): Subject[] {
