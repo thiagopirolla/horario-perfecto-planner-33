@@ -190,7 +190,7 @@ const SubjectTable: React.FC<SubjectTableProps> = ({
                 <TableHead>Horário *</TableHead>
                 <TableHead>Cap.</TableHead>
                 <TableHead>Preench.</TableHead>
-                <TableHead>Dificuldade</TableHead>
+                <TableHead>Facilidade</TableHead>
                 <TableHead>Obrigatória</TableHead>
                 <TableHead>Tem Amigo</TableHead>
                 <TableHead>Ações</TableHead>
