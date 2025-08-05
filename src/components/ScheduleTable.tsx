@@ -174,7 +174,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                 Turma {subject.class} • Prof. {subject.professor}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Dificuldade: {subject.difficulty}/5
+                                Facilidade: {subject.difficulty}/5
                               </div>
                               <div className="flex gap-1 flex-wrap">
                                 {subject.required && <Badge variant="destructive" className="text-xs">
@@ -210,7 +210,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
                       Vagas: {subject.capacity - subject.filledSpots}/{subject.capacity} • 
-                      Dificuldade: {subject.difficulty}/5 •
+                      Facilidade: {subject.difficulty}/5 •
                       Prioridade: {subject.priority?.toFixed(2) || '0.00'}
                     </div>
                   </div>
